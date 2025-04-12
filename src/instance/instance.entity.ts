@@ -28,6 +28,12 @@ export class Instance {
   @Column()
   dbHost: string;
 
+  @Column({ default: 1 })
+  maxcompanies: number;
+
+  @Column({ default: 2 })
+  maxusers: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
