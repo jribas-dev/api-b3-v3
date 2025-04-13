@@ -25,6 +25,16 @@ export class UserService {
     return user;
   }
 
+  async findOneByEmail(email: string | undefined): Promise<User | null> {
+    const user = await this.userRepo.findOneBy({ email });
+    return user;
+  }
+
+  async findOneByPhone(phone: string): Promise<User | null> {
+    const user = await this.userRepo.findOneBy({ phone });
+    return user;
+  }
+
   async update(userId: string, updates: Partial<User>): Promise<User> {
     const user = await this.findOneById(userId);
     Object.assign(user, updates);
