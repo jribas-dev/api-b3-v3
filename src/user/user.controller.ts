@@ -18,6 +18,8 @@ import { UserService } from './user.service';
 import { User } from './user.entity';
 import { plainToInstance } from 'class-transformer';
 import { UserResponseDto } from './dto/user-response.dto';
+import { CreateUserDto } from './dto/user-create.dto';
+import { UpdateUserDto } from './dto/user-update.dto';
 
 @UseGuards(JwtGuard)
 @Controller('users')
@@ -27,20 +29,22 @@ export class UserController {
   @UseGuards(RootGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() userData: Partial<User>): Promise<UserResponseDto> {
-    const existingUser = await this.userService.findOneByEmail(userData.email);
+  async create(@Body() userData: CreateUserDto): Promise<UserResponseDto> {
+    const existingUser = await this.userService.findOneByEmail(
+      (userData as Partial<User>).email,
+    );
     if (existingUser) {
       throw new ForbiddenException('Email já cadastrado');
     }
-    if (userData.phone) {
+    if ((userData as Partial<User>).phone) {
       const existingPhone = await this.userService.findOneByPhone(
-        userData.phone,
+        (userData as Partial<User>).phone,
       );
       if (existingPhone) {
         throw new ForbiddenException('Telefone já cadastrado');
       }
     }
-    const newuser = await this.userService.create(userData);
+    const newuser = await this.userService.create(userData as Partial<User>);
     if (!newuser) {
       throw new ForbiddenException('Erro ao criar usuário');
     }
@@ -82,7 +86,7 @@ export class UserController {
   @Patch(':id')
   async update(
     @Param('id') id: string,
-    @Body() updateData: Partial<any>,
+    @Body() @Body() updateData: UpdateUserDto,
     @Request() req: { user: { isRoot: boolean; userId: string } },
   ): Promise<UserResponseDto> {
     const user: { isRoot: boolean; userId: string } = req.user;
@@ -90,7 +94,10 @@ export class UserController {
       throw new ForbiddenException('Você só pode editar seus próprios dados');
     }
 
-    const updated = await this.userService.update(id, updateData);
+    const updated = await this.userService.update(
+      id,
+      updateData as Partial<User>,
+    );
     if (!updated) {
       throw new NotFoundException('Usuário não encontrado para atualização');
     }

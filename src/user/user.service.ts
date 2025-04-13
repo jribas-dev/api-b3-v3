@@ -30,7 +30,7 @@ export class UserService {
     return user;
   }
 
-  async findOneByPhone(phone: string): Promise<User | null> {
+  async findOneByPhone(phone: string | undefined): Promise<User | null> {
     const user = await this.userRepo.findOneBy({ phone });
     return user;
   }
