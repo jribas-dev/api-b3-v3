@@ -11,7 +11,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/user/user.entity';
 import { RefreshToken } from './refresh-token/refresh-token.entity';
 import { RefreshTokenService } from './refresh-token/refresh-token.service';
-import { LoginAttemptService } from './login-attempt.service';
+import { LoginAttemptService } from './login-attempt/login-attempt.service';
 import { BlacklistModule } from './black-list/black-list.module';
 
 @Module({

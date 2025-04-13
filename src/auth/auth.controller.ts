@@ -7,7 +7,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginAttemptService } from './login-attempt.service';
+import { LoginAttemptService } from './login-attempt/login-attempt.service';
 import { Request } from 'express';
 import { JwtGuard } from './guards/jwt.guard';
 import { BlacklistService } from './black-list/black-list.service';
