@@ -44,7 +44,7 @@ export class RefreshTokenService {
     await this.tokenRepo.update({ token }, { isRevoked: true });
   }
 
-  async revokeall(uId: string): Promise<void> {
-    await this.tokenRepo.update({ user: { userId: uId } }, { isRevoked: true });
-  }
+  // async revokeall(uId: string): Promise<void> {
+  //   await this.tokenRepo.update({ user: { userId: uId } }, { isRevoked: true });
+  // }
 }

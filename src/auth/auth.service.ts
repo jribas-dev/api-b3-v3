@@ -32,8 +32,8 @@ export class AuthService {
     return user;
   }
 
-  async login(email: string, password: string) {
-    const user = await this.validateUser(email, password);
+  async login(user: User) {
+    // const user = await this.validateUser(email, password);
 
     const payload: JwtPayload = {
       sub: user.userId,
@@ -44,8 +44,6 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync(payload, {
       expiresIn: '60m',
     });
-
-    await this.refreshTokenService.revokeall(user.userId);
 
     const refreshToken = await this.refreshTokenService.generate(user);
 
