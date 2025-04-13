@@ -17,6 +17,8 @@ import { UserInstanceService } from './user-instance.service';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RootGuard } from 'src/auth/guards/root.guard';
 import { UserInstance } from './user-instance.entity';
+import { CreateUserInstanceDto } from './dto/user-instance-create.dto';
+import { UpdateUserInstanceDto } from './dto/user-instance-update.dto';
 
 @UseGuards(JwtGuard)
 @Controller('user-instances')
@@ -26,7 +28,7 @@ export class UserInstanceController {
   @UseGuards(RootGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() data: Partial<UserInstance>): Promise<UserInstance> {
+  async create(@Body() data: CreateUserInstanceDto): Promise<UserInstance> {
     return this.userInstanceService.create(data);
   }
 
@@ -71,7 +73,7 @@ export class UserInstanceController {
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updates: Partial<UserInstance>,
+    @Body() updates: UpdateUserInstanceDto,
   ): Promise<UserInstance> {
     return this.userInstanceService.update(id, updates);
   }

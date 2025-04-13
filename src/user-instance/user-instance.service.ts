@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserInstance } from './user-instance.entity';
+import { CreateUserInstanceDto } from './dto/user-instance-create.dto';
+import { UpdateUserInstanceDto } from './dto/user-instance-update.dto';
 
 @Injectable()
 export class UserInstanceService {
@@ -10,7 +12,7 @@ export class UserInstanceService {
     private readonly userInstanceRepo: Repository<UserInstance>,
   ) {}
 
-  async create(data: Partial<UserInstance>): Promise<UserInstance> {
+  async create(data: CreateUserInstanceDto): Promise<UserInstance> {
     const relation = this.userInstanceRepo.create(data);
     return this.userInstanceRepo.save(relation);
   }
@@ -40,7 +42,7 @@ export class UserInstanceService {
 
   async update(
     id: number,
-    updates: Partial<UserInstance>,
+    updates: UpdateUserInstanceDto,
   ): Promise<UserInstance> {
     const relation = await this.findOne(id);
     Object.assign(relation, updates);
