@@ -13,12 +13,16 @@ import { RefreshToken } from './refresh-token/refresh-token.entity';
 import { RefreshTokenService } from './refresh-token/refresh-token.service';
 import { LoginAttemptService } from './login-attempt/login-attempt.service';
 import { BlacklistModule } from './black-list/black-list.module';
+import { PasswordService } from './password/password.service';
+import { UserModule } from 'src/user/user.module';
+import { UserService } from 'src/user/user.service';
 
 @Module({
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([User, RefreshToken]),
     PassportModule,
+    UserModule,
     // JwtModule.register({
     //   secret: process.env.JWT_SECRET || 'fallbackSecret',
     //   signOptions: { expiresIn: '60m' },
@@ -44,6 +48,8 @@ import { BlacklistModule } from './black-list/black-list.module';
     RootGuard,
     RefreshTokenService,
     LoginAttemptService,
+    PasswordService,
+    UserService,
   ],
   controllers: [AuthController],
   exports: [AuthService],

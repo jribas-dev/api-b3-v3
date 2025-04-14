@@ -3,7 +3,8 @@ import {
   Post,
   Body,
   Req,
-  UnauthorizedException,
+  HttpCode,
+  HttpStatus,
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -23,38 +24,28 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   async login(
     @Req() req: Request,
-    @Body() body: { email: string; password: string },
-  ): Promise<any> {
-    const ip = req.ip || '255.255.255.255';
-    const userAgent = req.headers['user-agent'] || 'unknown';
+    @Body() loginDto: { email: string; password: string },
+  ) {
+    const clientFingerprint = this.loginAttemptService.getIdentifier(req);
+    await this.loginAttemptService.shouldBlock(clientFingerprint);
 
-    if (this.loginAttemptService.isBlocked(ip, userAgent)) {
-      throw new UnauthorizedException(
-        '🔒 Muitas tentativas mal sucedidas. Tente novamente em 1 hora.',
-      );
+    const validUser = await this.authService.validate(
+      loginDto.email,
+      loginDto.password,
+      req,
+    );
+
+    if (validUser) {
+      const tokenResponse = await this.authService.login(validUser);
+      return tokenResponse;
     }
-
-    const { email, password } = body;
-    const result = await this.authService.validateUser(email, password);
-
-    if (!result) {
-      const warning = this.loginAttemptService.registerFailedAttempt(
-        ip,
-        userAgent,
-      );
-      throw new UnauthorizedException(
-        `Credenciais inválidas.${warning ? ' ' + warning : ''}`,
-      );
-    }
-
-    this.loginAttemptService.clearAttempts(ip, userAgent); // reset em caso de sucesso
-
-    return this.authService.login(result);
   }
 
   @Post('refresh')
+  @HttpCode(HttpStatus.OK)
   async refresh(@Body() body: { refreshToken: string }) {
     return this.authService.refresh(body.refreshToken);
   }

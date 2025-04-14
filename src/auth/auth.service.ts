@@ -1,41 +1,60 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-
-import { User } from 'src/user/user.entity';
-import { JwtPayload } from 'src/auth/jwt/jwt.payload.interface';
+import { UserService } from 'src/user/user.service';
+import { PasswordService } from './password/password.service';
 import { RefreshTokenService } from './refresh-token/refresh-token.service';
+import { LoginAttemptService } from './login-attempt/login-attempt.service';
+import { JwtPayload } from './jwt/jwt.payload.interface';
+import { Request } from 'express';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private userRepo: Repository<User>,
-    private jwtService: JwtService,
-    private refreshTokenService: RefreshTokenService,
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+    private readonly refreshTokenService: RefreshTokenService,
+    private readonly passwordService: PasswordService,
+    private readonly loginAttemptService: LoginAttemptService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.userRepo.findOne({ where: { email } });
+  async validate(email: string, password: string, req: Request): Promise<User> {
+    const identifier = this.loginAttemptService.getIdentifier(req);
+
+    // Verifica se a origem está bloqueada
+    await this.loginAttemptService.shouldBlock(identifier);
+
+    const user = await this.userService.findOneByEmail(email);
 
     if (!user || !user.isActive) {
-      throw new UnauthorizedException('Usuário inválido ou inativo');
+      await this.loginAttemptService.registerFailure(identifier);
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Dados não conferem');
+    const passwordValid = await this.passwordService.comparePasswords(
+      password,
+      user.password,
+    );
+
+    if (!passwordValid) {
+      await this.loginAttemptService.registerFailure(identifier);
+      throw new UnauthorizedException('Credenciais inválidas');
     }
+
+    // Zera as tentativas se login for bem-sucedido
+    await this.loginAttemptService.resetAttempts(identifier);
 
     return user;
   }
 
   async login(user: User) {
-    // const user = await this.validateUser(email, password);
-
-    const payload: JwtPayload = {
+    const payload = {
       sub: user.userId,
       email: user.email,
       isRoot: user.isRoot,
@@ -51,7 +70,7 @@ export class AuthService {
       accessToken,
       refreshToken,
       tokenType: 'Bearer',
-      expiresIn: 3600, // 60 min
+      expiresIn: 3600,
     };
   }
 

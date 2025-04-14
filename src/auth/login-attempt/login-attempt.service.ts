@@ -1,58 +1,74 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Request } from 'express';
 
 interface AttemptInfo {
-  attempts: number;
+  count: number;
   lastAttempt: Date;
   blockedUntil?: Date;
 }
 
 @Injectable()
 export class LoginAttemptService {
-  private attemptsMap: Map<string, AttemptInfo> = new Map();
-  private readonly MAX_ATTEMPTS = 5;
-  private readonly BLOCK_DURATION_MS = 60 * 60 * 1000; // 1 hora
+  private attempts: Map<string, AttemptInfo> = new Map();
+  private readonly maxAttempts = 5;
+  private readonly blockDurationMs = 60 * 60 * 1000; // 1 hora
 
-  private getClientId(ip: string, userAgent: string): string {
+  // Identificador por IP + User-Agent
+  getIdentifier(req: Request): string {
+    const ip = req.ip || req.connection.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || '';
     return `${ip}::${userAgent}`;
   }
 
-  public registerFailedAttempt(ip: string, userAgent: string): string | null {
-    const key = this.getClientId(ip, userAgent);
+  async shouldBlock(identifier: string): Promise<void> {
+    const info = this.attempts.get(identifier);
+
+    if (info?.blockedUntil && info.blockedUntil > new Date()) {
+      const minutesLeft = Math.ceil(
+        (info.blockedUntil.getTime() - Date.now()) / 60000,
+      );
+      throw new UnauthorizedException(
+        `Bloqueado por excesso de tentativas. Tente novamente em ${minutesLeft} minutos.`,
+      );
+    }
+    return Promise.resolve();
+  }
+
+  async registerFailure(identifier: string): Promise<void> {
     const now = new Date();
-    const attempt = this.attemptsMap.get(key) || {
-      attempts: 0,
+    const info = this.attempts.get(identifier) || {
+      count: 0,
       lastAttempt: now,
     };
 
-    attempt.attempts += 1;
-    attempt.lastAttempt = now;
+    info.count += 1;
+    info.lastAttempt = now;
 
-    if (attempt.attempts >= this.MAX_ATTEMPTS) {
-      attempt.blockedUntil = new Date(now.getTime() + this.BLOCK_DURATION_MS);
+    if (info.count >= this.maxAttempts) {
+      info.blockedUntil = new Date(now.getTime() + this.blockDurationMs);
     }
 
-    this.attemptsMap.set(key, attempt);
+    this.attempts.set(identifier, info);
 
-    if (attempt.attempts === 3 || attempt.attempts === 4) {
-      return `⚠️ Atenção: após ${this.MAX_ATTEMPTS} tentativas sua conta será bloqueada por 1 hora.`;
+    // Opcional: mensagens adicionais nas tentativas 3 e 4
+    if (info.count === 3 || info.count === 4) {
+      const remaining = this.maxAttempts - info.count;
+      throw new UnauthorizedException(
+        `Email ou senha incorretos. Após mais ${remaining} tentativa(s), o login será bloqueado por 1 hora.`,
+      );
     }
 
-    return null;
+    if (info.count >= this.maxAttempts) {
+      throw new UnauthorizedException(
+        'Você excedeu o número máximo de tentativas. Tente novamente em 1 hora.',
+      );
+    }
+
+    return Promise.resolve();
   }
 
-  public isBlocked(ip: string, userAgent: string): boolean {
-    const key = this.getClientId(ip, userAgent);
-    const attempt = this.attemptsMap.get(key);
-    if (!attempt || !attempt.blockedUntil) return false;
-    if (new Date() > attempt.blockedUntil) {
-      this.attemptsMap.delete(key); // desbloqueia
-      return false;
-    }
-    return true;
-  }
-
-  public clearAttempts(ip: string, userAgent: string) {
-    const key = this.getClientId(ip, userAgent);
-    this.attemptsMap.delete(key);
+  async resetAttempts(identifier: string): Promise<void> {
+    this.attempts.delete(identifier);
+    return Promise.resolve();
   }
 }

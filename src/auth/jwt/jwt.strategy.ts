@@ -16,6 +16,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ignoreExpiration: false,
       secretOrKey:
         config.get<string>('JWT_SECRET') || 'SePrecisouDissoAquiTaErrado',
+      passReqToCallback: true,
     });
   }
 

@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 
 @Entity('token_blacklist')
@@ -10,7 +11,8 @@ export class TokenBlacklist {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'text', unique: true })
+  @Index('token_blacklist_token_index')
+  @Column({ type: 'varchar', unique: true, length: 512 })
   token: string;
 
   @Column()
