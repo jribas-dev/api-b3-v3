@@ -16,7 +16,8 @@ export class RefreshTokenService {
 
   async generate(user: User): Promise<string> {
     const token = randomBytes(64).toString('hex');
-    const expires = isDate(new Date()) ? addDays(new Date(), 7) : new Date(); // token válido por 7 dias
+    const expires = isDate(new Date()) ? addDays(new Date(), 7) : new Date(); // adiciona 7 dias
+    expires.setHours(expires.getHours() + 1); // adiciona 1 hora
 
     await this.tokenRepo.save({
       token,

@@ -54,7 +54,7 @@ export class LoginAttemptService {
     if (info.count === 3 || info.count === 4) {
       const remaining = this.maxAttempts - info.count;
       throw new UnauthorizedException(
-        `Email ou senha incorretos. Após mais ${remaining} tentativa(s), o login será bloqueado por 1 hora.`,
+        `Credenciais inválidas. Após mais ${remaining} tentativa(s), o login será bloqueado por 1 hora.`,
       );
     }
 

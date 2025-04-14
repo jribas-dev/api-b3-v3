@@ -47,7 +47,7 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    // Zera as tentativas se login for bem-sucedido
+    // Zera as tentativas se validação for bem-sucedida
     await this.loginAttemptService.resetAttempts(identifier);
 
     return user;
