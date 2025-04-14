@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { diskStorage, Options } from 'multer';
 import { extname, join } from 'path';
 import * as fs from 'fs';
-import { PutObjectDto } from './dto/put-object.dto';
+import { PutObjectDto } from '../dto/put-object.dto';
 
 @Injectable()
 export class MulterOptionsFactory {

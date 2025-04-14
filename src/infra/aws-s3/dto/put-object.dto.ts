@@ -7,10 +7,6 @@ export class PutObjectDto {
 
   @IsString()
   @IsNotEmpty()
-  contentType: string;
-
-  @IsString()
-  @IsNotEmpty()
   folder: string;
 
   @IsString()

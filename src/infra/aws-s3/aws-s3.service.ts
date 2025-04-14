@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import {
   S3Client,
   PutObjectCommand,
@@ -9,37 +13,21 @@ import { DeleteObjectDto } from './dto/delete-object.dto';
 import { ConfigService } from '@nestjs/config';
 import { createReadStream } from 'fs';
 import { join } from 'path';
+import { S3_CLIENT } from './factories/s3-client.factory';
 
 @Injectable()
 export class AwsS3Service {
-  private readonly s3: S3Client;
   private readonly defaultBucket: string | undefined;
   private readonly uploadPath: string;
 
-  constructor(private readonly configService: ConfigService) {
-    const region = this.configService.get<string>('AWS_REGION') as string;
-
-    const aKeyId = this.configService.get<string>(
-      'AWS_ACCESS_KEY_ID',
-    ) as string;
-
-    const sKeyId = this.configService.get<string>(
-      'AWS_SECRET_ACCESS_KEY',
-    ) as string;
-
+  constructor(
+    @Inject(S3_CLIENT) private readonly s3: S3Client,
+    private readonly configService: ConfigService,
+  ) {
     this.defaultBucket = this.configService.get<string>(
       'AWS_S3_BUCKET_NAME',
     ) as string;
-
     this.uploadPath = this.configService.get<string>('UPLOAD_PATH') as string;
-
-    this.s3 = new S3Client({
-      region: region,
-      credentials: {
-        accessKeyId: aKeyId,
-        secretAccessKey: sKeyId,
-      },
-    });
   }
 
   async uploadFromDisk(file: Express.Multer.File, dto: PutObjectDto) {
@@ -53,7 +41,7 @@ export class AwsS3Service {
         Bucket: targetBucket,
         Key: dto.key,
         Body: fileStream,
-        ContentType: dto.contentType,
+        ACL: 'public-read',
       });
 
       const response = await this.s3.send(command);
