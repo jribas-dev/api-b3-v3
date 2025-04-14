@@ -7,6 +7,7 @@ import { UserInstanceModule } from './user-instance/user-instance.module';
 import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { InfraModule } from './infra/infra.module';
 
 @Module({
   imports: [
@@ -38,6 +39,8 @@ import { AppService } from './app.service';
     UserInstanceModule,
 
     AuthModule,
+
+    InfraModule,
   ],
   controllers: [AppController],
   providers: [AppService],
