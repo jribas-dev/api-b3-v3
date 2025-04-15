@@ -6,7 +6,7 @@ import {
   OneToMany,
   BeforeInsert,
 } from 'typeorm';
-import { UserInstance } from 'src/user-instance/user-instance.entity';
+import { UserInstance } from 'src/user-instance/entities/user-instance.entity';
 import { createId } from '@paralleldrive/cuid2';
 
 @Entity()

@@ -6,7 +6,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AppService } from './app.service';
-import { RoleBack, RoleFront } from './common/enums/user-instance-roles.enum';
+import { RoleBack, RoleFront } from './user-instance/enums/user-instance-roles.enum';
 import { JwtGuard } from './auth/guards/jwt.guard';
 
 type EnumMap = {

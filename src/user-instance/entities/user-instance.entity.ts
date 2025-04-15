@@ -5,9 +5,9 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { User } from 'src/user/user.entity';
-import { Instance } from 'src/instance/instance.entity';
-import { RoleBack, RoleFront } from 'src/common/enums/user-instance-roles.enum';
+import { User } from 'src/user/entities/user.entity';
+import { Instance } from 'src/instance/entities/instance.entity';
+import { RoleBack, RoleFront } from '../enums/user-instance-roles.enum';
 
 @Entity()
 export class UserInstance {

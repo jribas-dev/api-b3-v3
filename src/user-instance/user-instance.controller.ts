@@ -16,7 +16,7 @@ import {
 import { UserInstanceService } from './user-instance.service';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RootGuard } from 'src/auth/guards/root.guard';
-import { UserInstance } from './user-instance.entity';
+import { UserInstance } from './entities/user-instance.entity';
 import { CreateUserInstanceDto } from './dto/user-instance-create.dto';
 import { UpdateUserInstanceDto } from './dto/user-instance-update.dto';
 

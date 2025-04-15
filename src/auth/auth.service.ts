@@ -11,7 +11,7 @@ import { RefreshTokenService } from './refresh-token/refresh-token.service';
 import { LoginAttemptService } from './login-attempt/login-attempt.service';
 import { JwtPayload } from './jwt/jwt.payload.interface';
 import { Request } from 'express';
-import { User } from 'src/user/user.entity';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class AuthService {

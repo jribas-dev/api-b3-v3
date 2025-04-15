@@ -1,5 +1,5 @@
 import { IsBoolean, IsEnum, IsNotEmpty, IsString } from 'class-validator';
-import { RoleBack, RoleFront } from 'src/common/enums/user-instance-roles.enum';
+import { RoleBack, RoleFront } from 'src/user-instance/enums/user-instance-roles.enum';
 
 export class CreateUserInstanceDto {
   @IsString()

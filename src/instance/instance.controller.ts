@@ -13,7 +13,7 @@ import {
 import { InstanceService } from './instance.service';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RootGuard } from 'src/auth/guards/root.guard';
-import { Instance } from './instance.entity';
+import { Instance } from './entities/instance.entity';
 
 @UseGuards(JwtGuard)
 @Controller('instances')
