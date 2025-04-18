@@ -3,7 +3,12 @@ import { CreateSysFileDto } from './dto/create-sys-file.dto';
 import { UpdateSysFileDto } from './dto/update-sys-file.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SysFilesEntity } from './entities/sys-file.entity';
-import { Repository, MoreThanOrEqual } from 'typeorm';
+import {
+  Repository,
+  MoreThanOrEqual,
+  MoreThan,
+  LessThanOrEqual,
+} from 'typeorm';
 
 @Injectable()
 export class SysFilesService {
@@ -28,6 +33,54 @@ export class SysFilesService {
       throw new NotFoundException(`SysFile with id ${id} not found`);
 
     return sysFile;
+  }
+
+  async getMinorReleases(
+    systemId: string,
+    version: string,
+  ): Promise<SysFilesEntity[]> {
+    const sysFile = await this.sysFilesRepo.findOne({
+      where: { idSystem: +systemId, versao: +version },
+    });
+
+    if (!sysFile) throw new NotFoundException(`Version ${version} not found`);
+
+    const versionDb = sysFile.versaoDb.toString();
+    const sysFiles = await this.sysFilesRepo.find({
+      where: {
+        idSystem: +systemId,
+        versaoDb: +versionDb,
+        tipo: 'U',
+        versao: MoreThan(+version),
+      },
+    });
+    if (!sysFiles.length)
+      throw new NotFoundException(
+        `No minor releases found for version ${versionDb}`,
+      );
+
+    return sysFiles;
+  }
+
+  async getMajorReleases(
+    systemId: string,
+    version: string,
+    versionDb: string,
+  ): Promise<SysFilesEntity[]> {
+    const sysFiles = await this.sysFilesRepo.find({
+      where: {
+        idSystem: +systemId,
+        versao: MoreThan(+version),
+        versaoDb: LessThanOrEqual(+versionDb),
+        tipo: 'U',
+      },
+    });
+    if (!sysFiles.length)
+      throw new NotFoundException(
+        `No major releases found for version ${version} and versionDb ${versionDb}`,
+      );
+
+    return sysFiles;
   }
 
   async findByDays(idsystem: number, days: number): Promise<SysFilesEntity[]> {
