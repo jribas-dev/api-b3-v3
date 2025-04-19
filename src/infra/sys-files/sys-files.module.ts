@@ -4,10 +4,14 @@ import { SysFilesController } from './sys-files.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SystemsEntity } from '../common/system.entity';
 import { SysFilesEntity } from './entities/sys-file.entity';
+import { SqlFilesService } from '../sql-files/sql-files.service';
+import { SqlFilesEntity } from '../sql-files/entities/sql-file.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SystemsEntity, SysFilesEntity])],
+  imports: [
+    TypeOrmModule.forFeature([SystemsEntity, SysFilesEntity, SqlFilesEntity]),
+  ],
   controllers: [SysFilesController],
-  providers: [SysFilesService],
+  providers: [SysFilesService, SqlFilesService],
 })
 export class SysFilesModule {}
