@@ -86,7 +86,7 @@ export class UserController {
   @Patch(':id')
   async update(
     @Param('id') id: string,
-    @Body() @Body() updateData: UpdateUserDto,
+    @Body() updateData: UpdateUserDto,
     @Request() req: { user: { isRoot: boolean; userId: string } },
   ): Promise<UserResponseDto> {
     const user: { isRoot: boolean; userId: string } = req.user;

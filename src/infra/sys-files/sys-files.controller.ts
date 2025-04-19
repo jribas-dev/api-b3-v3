@@ -11,8 +11,8 @@ import {
 import { SysFilesService } from './sys-files.service';
 import { CreateSysFileDto } from './dto/create-sys-file.dto';
 import { UpdateSysFileDto } from './dto/update-sys-file.dto';
-import { RootGuard } from 'src/auth/guards/root.guard';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
+import { RootGuard } from 'src/auth/guards/root.guard';
 
 @UseGuards(JwtGuard)
 @Controller('sys-files')
@@ -27,50 +27,60 @@ export class SysFilesController {
 
   @UseGuards(RootGuard)
   @Get()
-  findAll() {
-    return this.sysFilesService.findAll();
+  async findAll() {
+    return await this.sysFilesService.findAll();
   }
 
   @UseGuards(JwtGuard)
   @Get(':idfile')
-  findOne(@Param('idfile') idfile: string) {
-    return this.sysFilesService.findOneById(+idfile);
+  async findOne(@Param('idfile') idfile: string) {
+    return await this.sysFilesService.findOneById(+idfile);
   }
 
   @UseGuards(JwtGuard)
   @Get('system/:id/minor/:version')
-  findMinorReleases(
+  async findMinorReleases(
     @Param('id') systemId: string,
     @Param('version') version: string,
   ) {
-    return this.sysFilesService.getMinorReleases(systemId, version);
+    return await this.sysFilesService.getMinorReleases(systemId, version);
   }
 
   @UseGuards(JwtGuard)
   @Get('system/:id/major/:version/:versionDb')
-  findMajorReleases(
+  async findMajorReleases(
     @Param('id') systemId: string,
     @Param('version') version: string,
     @Param('versionDb') versionDb: string,
   ) {
-    return this.sysFilesService.getMajorReleases(systemId, version, versionDb);
+    return await this.sysFilesService.getMajorReleases(
+      systemId,
+      version,
+      versionDb,
+    );
   }
 
   @UseGuards(RootGuard)
   @Get('system/:id/bydays/:days')
-  findOneByDays(@Param('days') idSystem: string, @Param('days') days: string) {
-    return this.sysFilesService.findByDays(+idSystem, +days);
+  async findByDays(
+    @Param('days') idSystem: string,
+    @Param('days') days: string,
+  ) {
+    return await this.sysFilesService.findByDays(+idSystem, +days);
   }
 
   @UseGuards(RootGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSysFileDto: UpdateSysFileDto) {
-    return this.sysFilesService.update(+id, updateSysFileDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateSysFileDto: UpdateSysFileDto,
+  ) {
+    return await this.sysFilesService.update(+id, updateSysFileDto);
   }
 
   @UseGuards(RootGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.sysFilesService.remove(+id);
+  async remove(@Param('id') id: string) {
+    return await this.sysFilesService.remove(+id);
   }
 }

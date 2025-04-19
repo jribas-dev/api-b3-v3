@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateSysFileDto } from './dto/create-sys-file.dto';
 import { UpdateSysFileDto } from './dto/update-sys-file.dto';
+import { ResponseSysFileDto } from './dto/response-sys-file.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SysFilesEntity } from './entities/sys-file.entity';
 import {
@@ -9,36 +10,60 @@ import {
   MoreThan,
   LessThanOrEqual,
 } from 'typeorm';
+import { SysFilesTipo } from './enums/sys-files-tipo.enum';
+import { plainToClass } from 'class-transformer';
+import { SqlFilesService } from '../sql-files/sql-files.service';
+import { SqlFilesTipo } from '../sql-files/enums/sql-files-tipo.enum';
 
 @Injectable()
 export class SysFilesService {
   constructor(
     @InjectRepository(SysFilesEntity)
+    @Inject(SqlFilesService)
     private readonly sysFilesRepo: Repository<SysFilesEntity>,
+    private readonly sqlFilesService: SqlFilesService,
   ) {}
 
-  async create(createSysFileDto: CreateSysFileDto): Promise<SysFilesEntity> {
-    const sysFile = this.sysFilesRepo.create(createSysFileDto);
-    return this.sysFilesRepo.save(sysFile);
+  async create(
+    createSysFileDto: CreateSysFileDto,
+  ): Promise<ResponseSysFileDto> {
+    const maxVersion =
+      (await this.sqlFilesService.getMaxVersionByType(
+        createSysFileDto.idSystem || 0,
+        createSysFileDto.tipo === SysFilesTipo.UPDATE
+          ? SqlFilesTipo.UPDATE
+          : SqlFilesTipo.FULL,
+      )) || 0;
+
+    const sysFile = this.sysFilesRepo.create({
+      ...createSysFileDto,
+      dthrFile: new Date(),
+      versaoDb: maxVersion,
+    });
+
+    await this.sysFilesRepo.save(sysFile);
+    return plainToClass(ResponseSysFileDto, sysFile);
   }
 
-  async findAll(): Promise<SysFilesEntity[]> {
-    return this.sysFilesRepo.find({ relations: ['idSystem'] });
+  async findAll(): Promise<ResponseSysFileDto[]> {
+    const sysFiles = await this.sysFilesRepo.find();
+    if (!sysFiles.length) throw new NotFoundException('No SysFiles found');
+    return sysFiles.map((sysFile) => plainToClass(ResponseSysFileDto, sysFile));
   }
 
-  async findOneById(id: number): Promise<SysFilesEntity> {
+  async findOneById(id: number): Promise<ResponseSysFileDto> {
     const sysFile = await this.sysFilesRepo.findOne({ where: { idFile: id } });
 
     if (!sysFile)
       throw new NotFoundException(`SysFile with id ${id} not found`);
 
-    return sysFile;
+    return plainToClass(ResponseSysFileDto, sysFile);
   }
 
   async getMinorReleases(
     systemId: string,
     version: string,
-  ): Promise<SysFilesEntity[]> {
+  ): Promise<ResponseSysFileDto[]> {
     const sysFile = await this.sysFilesRepo.findOne({
       where: { idSystem: +systemId, versao: +version },
     });
@@ -50,7 +75,7 @@ export class SysFilesService {
       where: {
         idSystem: +systemId,
         versaoDb: +versionDb,
-        tipo: 'U',
+        tipo: SysFilesTipo.UPDATE,
         versao: MoreThan(+version),
       },
     });
@@ -59,20 +84,20 @@ export class SysFilesService {
         `No minor releases found for version ${versionDb}`,
       );
 
-    return sysFiles;
+    return sysFiles.map((file) => plainToClass(ResponseSysFileDto, file));
   }
 
   async getMajorReleases(
     systemId: string,
     version: string,
     versionDb: string,
-  ): Promise<SysFilesEntity[]> {
+  ): Promise<ResponseSysFileDto[]> {
     const sysFiles = await this.sysFilesRepo.find({
       where: {
         idSystem: +systemId,
         versao: MoreThan(+version),
         versaoDb: LessThanOrEqual(+versionDb),
-        tipo: 'U',
+        tipo: SysFilesTipo.UPDATE,
       },
     });
     if (!sysFiles.length)
@@ -80,26 +105,45 @@ export class SysFilesService {
         `No major releases found for version ${version} and versionDb ${versionDb}`,
       );
 
-    return sysFiles;
+    return sysFiles.map((file) => plainToClass(ResponseSysFileDto, file));
   }
 
-  async findByDays(idsystem: number, days: number): Promise<SysFilesEntity[]> {
+  async findByDays(
+    idsystem: number,
+    days: number,
+  ): Promise<ResponseSysFileDto[]> {
     const date = new Date(Date.now());
     date.setDate(date.getDate() - days);
 
-    return this.sysFilesRepo.find({
-      where: { idSystem: idsystem, dthrFile: MoreThanOrEqual(date) },
+    const sysFiles = await this.sysFilesRepo.find({
+      where: {
+        idSystem: +idsystem,
+        dthrFile: MoreThanOrEqual(date),
+      },
     });
+
+    if (!sysFiles.length)
+      throw new NotFoundException(
+        `No SysFiles found for system ${idsystem} in the last ${days} days`,
+      );
+
+    return sysFiles.map((file) => plainToClass(ResponseSysFileDto, file));
   }
 
-  async update(id: number, updates: UpdateSysFileDto) {
+  async update(
+    id: number,
+    updates: UpdateSysFileDto,
+  ): Promise<ResponseSysFileDto> {
     const sysFile = await this.findOneById(id);
     Object.assign(sysFile, updates);
-    return this.sysFilesRepo.save(sysFile);
+    await this.sysFilesRepo.save(sysFile);
+    return plainToClass(ResponseSysFileDto, sysFile);
   }
 
   async remove(id: number): Promise<void> {
-    const sysFile = await this.findOneById(id);
-    await this.sysFilesRepo.remove(sysFile);
+    const result = await this.sysFilesRepo.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`SysFile with id ${id} not found`);
+    }
   }
 }
