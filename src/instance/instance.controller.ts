@@ -8,51 +8,41 @@ import {
   HttpStatus,
   HttpCode,
   UseGuards,
-  NotFoundException,
 } from '@nestjs/common';
 import { InstanceService } from './instance.service';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RootGuard } from 'src/auth/guards/root.guard';
-import { Instance } from './entities/instance.entity';
+import { CreateInstanceDto } from './dto/create-instance.dto';
+import { UpdateInstanceDto } from './dto/update-instance.dto';
 
 @UseGuards(JwtGuard)
 @Controller('instances')
 export class InstanceController {
-  constructor(private readonly instanceService: InstanceService) {}
+  constructor(private readonly InstanceService: InstanceService) {}
 
   @UseGuards(RootGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() data: Partial<Instance>): Promise<Instance> {
-    return this.instanceService.create(data);
+  async create(@Body() data: Partial<CreateInstanceDto>) {
+    return this.InstanceService.create(data);
   }
 
   @UseGuards(RootGuard)
   @Get()
-  async findAll(): Promise<Instance[]> {
-    return this.instanceService.findAll();
+  async findAll() {
+    return await this.InstanceService.findAll();
   }
 
   @UseGuards(RootGuard)
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<Instance> {
-    const instance = await this.instanceService.findOneById(id);
-    if (!instance) {
-      throw new NotFoundException('Instância não encontrada');
-    }
-    return instance;
+  async findOne(@Param('id') id: string) {
+    return await this.InstanceService.findOneById(id);
   }
 
   @UseGuards(RootGuard)
   @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updates: Partial<Instance>,
-  ): Promise<Instance> {
-    const updated = await this.instanceService.update(id, updates);
-    if (!updated) {
-      throw new NotFoundException('Instância não encontrada para atualização');
-    }
+  async update(@Param('id') id: string, @Body() updates: UpdateInstanceDto) {
+    const updated = await this.InstanceService.update(id, updates);
     return updated;
   }
 }

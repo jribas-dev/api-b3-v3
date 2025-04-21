@@ -6,7 +6,8 @@ export class PasswordService {
   private readonly saltRounds = 12;
 
   async hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, this.saltRounds);
+    const salt = await bcrypt.genSalt(this.saltRounds);
+    return bcrypt.hash(password, salt);
   }
 
   async comparePasswords(password: string, hashed: string): Promise<boolean> {

@@ -8,7 +8,7 @@ import { JwtStrategy } from './jwt/jwt.strategy';
 import { JwtGuard } from './guards/jwt.guard';
 import { RootGuard } from './guards/root.guard';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from 'src/user/entities/user.entity';
+import { UserEntity } from 'src/user/entities/user.entity';
 import { RefreshToken } from './refresh-token/refresh-token.entity';
 import { RefreshTokenService } from './refresh-token/refresh-token.service';
 import { LoginAttemptService } from './login-attempt/login-attempt.service';
@@ -20,7 +20,7 @@ import { UserService } from 'src/user/user.service';
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User, RefreshToken]),
+    TypeOrmModule.forFeature([UserEntity, RefreshToken]),
     PassportModule,
     UserModule,
     // JwtModule.register({

@@ -15,11 +15,8 @@ import {
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RootGuard } from 'src/auth/guards/root.guard';
 import { UserService } from './user.service';
-import { User } from './entities/user.entity';
-import { plainToInstance } from 'class-transformer';
-import { UserResponseDto } from './dto/user-response.dto';
-import { CreateUserDto } from './dto/user-create.dto';
-import { UpdateUserDto } from './dto/user-update.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @UseGuards(JwtGuard)
 @Controller('users')
@@ -29,58 +26,51 @@ export class UserController {
   @UseGuards(RootGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() userData: CreateUserDto): Promise<UserResponseDto> {
-    const existingUser = await this.userService.findOneByEmail(
-      (userData as Partial<User>).email,
-    );
+  async create(@Body() userData: CreateUserDto) {
+    const existingUser = await this.userService.findOneByEmail(userData.email);
     if (existingUser) {
       throw new ForbiddenException('Email já cadastrado');
     }
-    if ((userData as Partial<User>).phone) {
+    if (userData.phone) {
       const existingPhone = await this.userService.findOneByPhone(
-        (userData as Partial<User>).phone,
+        userData.phone,
       );
       if (existingPhone) {
         throw new ForbiddenException('Telefone já cadastrado');
       }
     }
-    const newuser = await this.userService.create(userData as Partial<User>);
-    if (!newuser) {
-      throw new ForbiddenException('Erro ao criar usuário');
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(userData.password)) {
+      throw new ForbiddenException(
+        'A senha deve ter pelo menos 8 caracteres, incluindo letras e números',
+      );
     }
-    const userResponse = plainToInstance(UserResponseDto, newuser);
-    return userResponse;
+    return await this.userService.create(userData);
   }
 
   @UseGuards(RootGuard)
   @Get()
-  async findAll(): Promise<UserResponseDto[]> {
+  async findAll() {
     const users = await this.userService.findAll();
     if (!users || users.length === 0) {
       throw new NotFoundException('Nenhum usuário encontrado');
     }
-    return plainToInstance(UserResponseDto, users);
+    return users;
   }
 
   @UseGuards(RootGuard)
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<UserResponseDto> {
-    const user = await this.userService.findOneById(id);
-    if (!user) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
-    return plainToInstance(UserResponseDto, user);
+  async findOne(@Param('id') id: string) {
+    return await this.userService.findOneById(id);
   }
 
   @Get('get/me')
-  async findMe(
-    @Request() req: { user: { isRoot: boolean; userId: string } },
-  ): Promise<UserResponseDto> {
+  async findMe(@Request() req: { user: { isRoot: boolean; userId: string } }) {
     const user = await this.userService.findOneById(req.user.userId);
     if (!user) {
       throw new NotFoundException('Usuário pra lá de bagdá');
     }
-    return plainToInstance(UserResponseDto, user);
+    return user;
   }
 
   @Patch(':id')
@@ -88,19 +78,11 @@ export class UserController {
     @Param('id') id: string,
     @Body() updateData: UpdateUserDto,
     @Request() req: { user: { isRoot: boolean; userId: string } },
-  ): Promise<UserResponseDto> {
+  ) {
     const user: { isRoot: boolean; userId: string } = req.user;
     if (!user.isRoot && user.userId !== id) {
       throw new ForbiddenException('Você só pode editar seus próprios dados');
     }
-
-    const updated = await this.userService.update(
-      id,
-      updateData as Partial<User>,
-    );
-    if (!updated) {
-      throw new NotFoundException('Usuário não encontrado para atualização');
-    }
-    return plainToInstance(UserResponseDto, updated);
+    return await this.userService.update(id, updateData);
   }
 }

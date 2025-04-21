@@ -5,12 +5,13 @@ import {
   CreateDateColumn,
   OneToMany,
   BeforeInsert,
+  UpdateDateColumn,
 } from 'typeorm';
-import { UserInstance } from 'src/user-instance/entities/user-instance.entity';
+import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
 import { createId } from '@paralleldrive/cuid2';
 
-@Entity()
-export class Instance {
+@Entity({ name: 'instance' })
+export class InstanceEntity {
   @PrimaryColumn()
   dbId: string;
 
@@ -34,12 +35,15 @@ export class Instance {
   @Column({ default: 2 })
   maxusers: number;
 
-  @CreateDateColumn()
-  createdAt: Date;
-
   @Column({ default: true })
   isActive: boolean;
 
-  @OneToMany(() => UserInstance, (userInstance) => userInstance.instance)
-  users: UserInstance[];
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @OneToMany(() => UserInstanceEntity, (userInstance) => userInstance.instance)
+  users: UserInstanceEntity[];
 }

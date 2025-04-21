@@ -1,43 +1,71 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { UserEntity } from './entities/user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
+import { ResponseUserDto } from './dto/response-user.dto';
+import { plainToClass } from 'class-transformer';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { PasswordService } from 'src/auth/password/password.service';
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
+    private readonly passwordService: PasswordService,
   ) {}
 
-  async create(userData: Partial<User>): Promise<User> {
-    const user = this.userRepo.create(userData);
-    return this.userRepo.save(user);
+  async create(userData: CreateUserDto): Promise<ResponseUserDto> {
+    const user = this.userRepo.create({
+      ...userData,
+      password: await this.passwordService.hashPassword(userData.password),
+    });
+    const savedUser = await this.userRepo.save(user);
+    return plainToClass(ResponseUserDto, savedUser);
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userRepo.find();
+  async findAll(): Promise<ResponseUserDto[]> {
+    const users = await this.userRepo.find();
+    if (!users || users.length === 0) {
+      throw new NotFoundException('Nenhum usuário encontrado');
+    }
+    return users.map((user) => plainToClass(ResponseUserDto, user));
   }
 
-  async findOneById(userId: string): Promise<User> {
+  async findOneById(userId: string): Promise<ResponseUserDto> {
     const user = await this.userRepo.findOneBy({ userId });
     if (!user) throw new NotFoundException('Usuário não encontrado');
-    return user;
+    return plainToClass(ResponseUserDto, user);
   }
 
-  async findOneByEmail(email: string | undefined): Promise<User | null> {
+  async findOneByEmail(email: string | undefined): Promise<UserEntity | null> {
     const user = await this.userRepo.findOneBy({ email });
+    if (!user) return null;
     return user;
   }
 
-  async findOneByPhone(phone: string | undefined): Promise<User | null> {
+  async getHashedPassword(email: string): Promise<string> {
+    const user = await this.userRepo.findOne({
+      where: { email },
+      select: ['password'],
+    });
+    return user?.password || '';
+  }
+
+  async findOneByPhone(phone: string | undefined): Promise<UserEntity | null> {
     const user = await this.userRepo.findOneBy({ phone });
+    if (!user) return null;
     return user;
   }
 
-  async update(userId: string, updates: Partial<User>): Promise<User> {
+  async update(
+    userId: string,
+    updates: Partial<UpdateUserDto>,
+  ): Promise<ResponseUserDto> {
     const user = await this.findOneById(userId);
     Object.assign(user, updates);
-    return this.userRepo.save(user);
+    const updatedUser = await this.userRepo.save(user);
+    return plainToClass(ResponseUserDto, updatedUser);
   }
 }

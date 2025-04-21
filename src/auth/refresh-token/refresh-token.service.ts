@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RefreshToken } from './refresh-token.entity';
-import { User } from 'src/user/entities/user.entity';
+import { UserEntity } from 'src/user/entities/user.entity';
 import { randomBytes } from 'crypto';
 import { addDays } from 'date-fns';
 import { isDate } from 'date-fns';
@@ -14,7 +14,7 @@ export class RefreshTokenService {
     private tokenRepo: Repository<RefreshToken>,
   ) {}
 
-  async generate(user: User): Promise<string> {
+  async generate(user: UserEntity): Promise<string> {
     const token = randomBytes(64).toString('hex');
     const expires = isDate(new Date()) ? addDays(new Date(), 7) : new Date(); // adiciona 7 dias
     expires.setHours(expires.getHours() + 1); // adiciona 1 hora

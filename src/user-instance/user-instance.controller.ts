@@ -16,9 +16,8 @@ import {
 import { UserInstanceService } from './user-instance.service';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RootGuard } from 'src/auth/guards/root.guard';
-import { UserInstance } from './entities/user-instance.entity';
-import { CreateUserInstanceDto } from './dto/user-instance-create.dto';
-import { UpdateUserInstanceDto } from './dto/user-instance-update.dto';
+import { CreateUserInstanceDto } from './dto/create-user-instance.dto';
+import { UpdateUserInstanceDto } from './dto/update-user-instance.dto';
 
 @UseGuards(JwtGuard)
 @Controller('user-instances')
@@ -28,7 +27,7 @@ export class UserInstanceController {
   @UseGuards(RootGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() data: CreateUserInstanceDto): Promise<UserInstance> {
+  async create(@Body() data: CreateUserInstanceDto) {
     return this.userInstanceService.create(data);
   }
 
@@ -36,7 +35,7 @@ export class UserInstanceController {
   async findByUser(
     @Param('userId') userId: string,
     @Request() req: { user: { isRoot: boolean; userId: string } },
-  ): Promise<UserInstance[]> {
+  ) {
     const user = req.user;
     if (user.userId !== userId) {
       throw new ForbiddenException(
@@ -48,7 +47,7 @@ export class UserInstanceController {
 
   @UseGuards(RootGuard)
   @Get('db/:dbId')
-  async findByDb(@Param('dbId') dbId: string): Promise<UserInstance[]> {
+  async findByDb(@Param('dbId') dbId: string) {
     return this.userInstanceService.findByDb(dbId);
   }
 
@@ -56,7 +55,7 @@ export class UserInstanceController {
   async findOne(
     @Param('id', ParseIntPipe) id: number,
     @Request() req: { user: { isRoot: boolean; userId: string } },
-  ): Promise<UserInstance> {
+  ) {
     const userInstance = await this.userInstanceService.findOne(id);
     if (!userInstance) {
       throw new NotFoundException('Instancia não encontrada');
@@ -74,7 +73,7 @@ export class UserInstanceController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updates: UpdateUserInstanceDto,
-  ): Promise<UserInstance> {
+  ) {
     return this.userInstanceService.update(id, updates);
   }
 }

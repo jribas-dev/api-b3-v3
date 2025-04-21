@@ -1,51 +1,66 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserInstance } from './entities/user-instance.entity';
-import { CreateUserInstanceDto } from './dto/user-instance-create.dto';
-import { UpdateUserInstanceDto } from './dto/user-instance-update.dto';
+import { UserInstanceEntity } from './entities/user-instance.entity';
+import { CreateUserInstanceDto } from './dto/create-user-instance.dto';
+import { UpdateUserInstanceDto } from './dto/update-user-instance.dto';
+import { ResponseUserInstanceDto } from './dto/response-user-instance.dto';
+import { plainToClass } from 'class-transformer';
 
 @Injectable()
 export class UserInstanceService {
   constructor(
-    @InjectRepository(UserInstance)
-    private readonly userInstanceRepo: Repository<UserInstance>,
+    @InjectRepository(UserInstanceEntity)
+    private readonly userInstanceRepo: Repository<UserInstanceEntity>,
   ) {}
 
-  async create(data: CreateUserInstanceDto): Promise<UserInstance> {
-    const relation = this.userInstanceRepo.create(data);
-    return this.userInstanceRepo.save(relation);
+  async create(data: CreateUserInstanceDto): Promise<ResponseUserInstanceDto> {
+    const newdata = this.userInstanceRepo.create({ ...data, isActive: true });
+    const saved = await this.userInstanceRepo.save(newdata);
+    return plainToClass(ResponseUserInstanceDto, saved);
   }
 
-  async findOne(id: number): Promise<UserInstance> {
-    const relation = await this.userInstanceRepo.findOne({
+  async findOne(id: number): Promise<ResponseUserInstanceDto> {
+    const found = await this.userInstanceRepo.findOne({
       where: { id },
-      relations: ['user', 'instance'],
     });
-    if (!relation) throw new NotFoundException('Relação não encontrada');
-    return relation;
+    if (!found) throw new NotFoundException('User instance not found');
+    return plainToClass(ResponseUserInstanceDto, found);
   }
 
-  async findByUser(userId: string): Promise<UserInstance[]> {
-    return this.userInstanceRepo.find({
+  async findByUser(userId: string): Promise<ResponseUserInstanceDto[]> {
+    const userInstances = await this.userInstanceRepo.find({
       where: { userId, isActive: true },
       relations: ['instance'],
     });
+    if (!userInstances || userInstances.length === 0) {
+      throw new NotFoundException('No user instances found');
+    }
+    return userInstances.map((userInstance) =>
+      plainToClass(ResponseUserInstanceDto, userInstance),
+    );
   }
 
-  async findByDb(dbId: string): Promise<UserInstance[]> {
-    return this.userInstanceRepo.find({
+  async findByDb(dbId: string): Promise<ResponseUserInstanceDto[]> {
+    const usersInstance = await this.userInstanceRepo.find({
       where: { dbId, isActive: true },
       relations: ['user'],
     });
+    if (!usersInstance || usersInstance.length === 0) {
+      throw new NotFoundException('No user instances found');
+    }
+    return usersInstance.map((userInstance) =>
+      plainToClass(ResponseUserInstanceDto, userInstance),
+    );
   }
 
   async update(
     id: number,
     updates: UpdateUserInstanceDto,
-  ): Promise<UserInstance> {
+  ): Promise<ResponseUserInstanceDto> {
     const relation = await this.findOne(id);
     Object.assign(relation, updates);
-    return this.userInstanceRepo.save(relation);
+    const saved = await this.userInstanceRepo.save(relation);
+    return plainToClass(ResponseUserInstanceDto, saved);
   }
 }

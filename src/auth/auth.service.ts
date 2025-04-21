@@ -11,7 +11,7 @@ import { RefreshTokenService } from './refresh-token/refresh-token.service';
 import { LoginAttemptService } from './login-attempt/login-attempt.service';
 import { JwtPayload } from './jwt/jwt.payload.interface';
 import { Request } from 'express';
-import { User } from 'src/user/entities/user.entity';
+import { UserEntity } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -24,22 +24,26 @@ export class AuthService {
     private readonly loginAttemptService: LoginAttemptService,
   ) {}
 
-  async validate(email: string, password: string, req: Request): Promise<User> {
+  async validate(
+    email: string,
+    password: string,
+    req: Request,
+  ): Promise<UserEntity> {
     const identifier = this.loginAttemptService.getIdentifier(req);
 
     // Verifica se a origem está bloqueada
     await this.loginAttemptService.shouldBlock(identifier);
 
     const user = await this.userService.findOneByEmail(email);
-
     if (!user || !user.isActive) {
       await this.loginAttemptService.registerFailure(identifier);
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
+    const hashedPassword = await this.userService.getHashedPassword(email);
     const passwordValid = await this.passwordService.comparePasswords(
       password,
-      user.password,
+      hashedPassword,
     );
 
     if (!passwordValid) {
@@ -53,7 +57,7 @@ export class AuthService {
     return user;
   }
 
-  async login(user: User) {
+  async login(user: UserEntity) {
     const payload = {
       sub: user.userId,
       email: user.email,

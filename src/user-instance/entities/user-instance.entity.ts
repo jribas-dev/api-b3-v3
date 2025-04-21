@@ -5,12 +5,12 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { User } from 'src/user/entities/user.entity';
-import { Instance } from 'src/instance/entities/instance.entity';
+import { UserEntity } from 'src/user/entities/user.entity';
+import { InstanceEntity } from 'src/instance/entities/instance.entity';
 import { RoleBack, RoleFront } from '../enums/user-instance-roles.enum';
 
-@Entity()
-export class UserInstance {
+@Entity({ name: 'user_instances' })
+export class UserInstanceEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -37,11 +37,11 @@ export class UserInstance {
   @Column({ default: true })
   isActive: boolean;
 
-  @ManyToOne(() => User, (user) => user.instances)
+  @ManyToOne(() => UserEntity, (user) => user.instances)
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user: UserEntity;
 
-  @ManyToOne(() => Instance, (instance) => instance.users)
+  @ManyToOne(() => InstanceEntity, (instance) => instance.users)
   @JoinColumn({ name: 'dbId' })
-  instance: Instance;
+  instance: InstanceEntity;
 }

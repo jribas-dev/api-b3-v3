@@ -1,8 +1,7 @@
 import { Exclude, Expose } from 'class-transformer';
-import { User } from '../entities/user.entity';
 
 @Exclude()
-export class UserResponseDto {
+export class ResponseUserDto {
   @Expose()
   userId: string;
 
@@ -20,11 +19,4 @@ export class UserResponseDto {
 
   @Expose()
   isActive: boolean;
-
-  @Expose()
-  createdAt: Date;
-
-  constructor(partial: Partial<User>) {
-    Object.assign(this, partial);
-  }
 }

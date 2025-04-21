@@ -2,33 +2,45 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Instance } from './entities/instance.entity';
+import { InstanceEntity } from './entities/instance.entity';
+import { CreateInstanceDto } from './dto/create-instance.dto';
+import { ResponseInstanceDto } from './dto/response-instance.dto';
+import { plainToClass } from 'class-transformer';
+import { UpdateInstanceDto } from './dto/update-instance.dto';
 
 @Injectable()
 export class InstanceService {
   constructor(
-    @InjectRepository(Instance)
-    private readonly instanceRepo: Repository<Instance>,
+    @InjectRepository(InstanceEntity)
+    private readonly instanceRepo: Repository<InstanceEntity>,
   ) {}
 
-  async create(data: Partial<Instance>): Promise<Instance> {
-    const instance = this.instanceRepo.create(data);
-    return this.instanceRepo.save(instance);
+  async create(data: Partial<CreateInstanceDto>): Promise<ResponseInstanceDto> {
+    const newInstance = this.instanceRepo.create(data);
+    const saved = await this.instanceRepo.save(newInstance);
+    return plainToClass(ResponseInstanceDto, saved);
   }
 
-  async findAll(): Promise<Instance[]> {
-    return this.instanceRepo.find();
+  async findAll(): Promise<ResponseInstanceDto[]> {
+    const instances = await this.instanceRepo.find();
+    return instances.map((instance) =>
+      plainToClass(ResponseInstanceDto, instance),
+    );
   }
 
-  async findOneById(dbId: string): Promise<Instance> {
+  async findOneById(dbId: string): Promise<ResponseInstanceDto> {
     const instance = await this.instanceRepo.findOneBy({ dbId });
     if (!instance) throw new NotFoundException('Instância não encontrada');
-    return instance;
+    return plainToClass(ResponseInstanceDto, instance);
   }
 
-  async update(dbId: string, updates: Partial<Instance>): Promise<Instance> {
+  async update(
+    dbId: string,
+    updates: Partial<UpdateInstanceDto>,
+  ): Promise<ResponseInstanceDto> {
     const instance = await this.findOneById(dbId);
     Object.assign(instance, updates);
-    return this.instanceRepo.save(instance);
+    const updatedInstance = await this.instanceRepo.save(instance);
+    return plainToClass(ResponseInstanceDto, updatedInstance);
   }
 }
