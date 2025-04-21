@@ -9,21 +9,20 @@ import {
   NotFoundException,
   ForbiddenException,
   HttpStatus,
-  UseGuards,
   Request,
+  UseGuards,
 } from '@nestjs/common';
-import { JwtGuard } from 'src/auth/guards/jwt.guard';
-import { RootGuard } from 'src/auth/guards/root.guard';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtGuard } from 'src/auth/guards/jwt.guard';
+import { RootGuard } from 'src/auth/guards/root.guard';
 
 @UseGuards(JwtGuard)
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @UseGuards(RootGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() userData: CreateUserDto) {
@@ -58,7 +57,6 @@ export class UserController {
     return users;
   }
 
-  @UseGuards(RootGuard)
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return await this.userService.findOneById(id);

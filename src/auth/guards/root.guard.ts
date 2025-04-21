@@ -10,7 +10,7 @@ export class RootGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context
       .switchToHttp()
-      .getRequest<{ user?: { isRoot?: boolean } }>();
+      .getRequest<Request & { user: { isRoot: boolean; userId: string } }>();
     const user = request.user;
 
     if (user?.isRoot) {
