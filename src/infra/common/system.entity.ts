@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { SysFilesEntity } from '../sys-files/entities/sys-file.entity';
 import { SqlFilesEntity } from '../sql-files/entities/sql-file.entity';
 
-@Entity('systems')
+@Entity('sistemas')
 export class SystemsEntity {
   @PrimaryGeneratedColumn()
   idSystem: number;
