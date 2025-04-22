@@ -28,8 +28,18 @@ export class AwsS3Controller {
     if (!dto.folder) {
       throw new BadRequestException('folder is required');
     }
-
-    return this.awsS3Service.uploadFromDisk(file, dto);
+    const savedFilePath = await this.awsS3Service.uploadFile(file, dto.folder);
+    if (savedFilePath) {
+      const uploadResult = await this.awsS3Service.uploadAwsS3(
+        savedFilePath,
+        dto.key,
+        dto.bucket,
+      );
+      if (!uploadResult) {
+        throw new BadRequestException('Failed to upload file to S3');
+      }
+      return uploadResult;
+    }
   }
 
   @Delete('deletefile')

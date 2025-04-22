@@ -12,4 +12,10 @@ export class PutObjectDto {
   @IsString()
   @IsOptional()
   bucket?: string;
+
+  constructor(key: string, folder: string, bucket?: string) {
+    this.key = key;
+    this.folder = folder;
+    this.bucket = bucket;
+  }
 }
