@@ -12,7 +12,7 @@ import { AwsS3Service } from './aws-s3.service';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { join } from 'path';
-import { ActionsFileObjectDto } from './dtos/actions-file-object.dto';
+import { ActionsFileObjectDto } from './dto/actions-file-object.dto';
 
 @UseGuards(JwtGuard)
 @Controller('infra/aws-s3')
