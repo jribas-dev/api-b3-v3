@@ -60,6 +60,21 @@ export class AwsS3Service {
     }
   }
 
+  async deleteLocal(folder: string, fileName: string) {
+    const fullPath = join(this.uploadPath, folder, fileName);
+    try {
+      await fsPromises.unlink(fullPath);
+      return {
+        success: true,
+        message: 'Arquivo deletado com sucesso',
+      };
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: `Erro ao deletar arquivo no disco: ${(error as Error).message}`,
+      });
+    }
+  }
+
   async uploadAwsS3(
     file: Express.Multer.File,
     fullKey: string,
@@ -94,7 +109,7 @@ export class AwsS3Service {
     }
   }
 
-  async deleteObject(fullKey: string, bucket?: string) {
+  async deleteAwsS3(fullKey: string, bucket?: string) {
     const targetBucket = bucket || this.defaultBucket;
     const command = new DeleteObjectCommand({
       Bucket: targetBucket,

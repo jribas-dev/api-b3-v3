@@ -83,6 +83,18 @@ export class AwsS3Controller {
     return uploadResult;
   }
 
+  @Delete('deletefile/local')
+  async deleteFileLocal(@Body() dto: ActionsFileObjectDto) {
+    const { folderName, fileName } = dto;
+    if (!folderName) {
+      throw new BadRequestException('folderName is required');
+    }
+    if (!fileName) {
+      throw new BadRequestException('fileName is required');
+    }
+    return await this.awsS3Service.deleteLocal(folderName, fileName);
+  }
+
   @Delete('deletefile')
   async deleteFile(@Body() dto: ActionsFileObjectDto) {
     const { folderName, fileName, bucket } = dto;
@@ -93,6 +105,6 @@ export class AwsS3Controller {
       throw new BadRequestException('fileName is required');
     }
     const fullKey = join(folderName, fileName);
-    return await this.awsS3Service.deleteObject(fullKey, bucket);
+    return await this.awsS3Service.deleteAwsS3(fullKey, bucket);
   }
 }
