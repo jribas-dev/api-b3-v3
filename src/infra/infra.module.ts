@@ -8,7 +8,13 @@ import { SqlFilesModule } from './sql-files/sql-files.module';
 import { AwsSesModule } from './aws-ses/aws-ses.module';
 
 @Module({
-  imports: [ConfigModule, AwsS3Module, SysFilesModule, SqlFilesModule, AwsSesModule],
+  imports: [
+    ConfigModule,
+    AwsS3Module,
+    SysFilesModule,
+    SqlFilesModule,
+    AwsSesModule,
+  ],
   providers: [InfraService],
   controllers: [InfraController],
 })
