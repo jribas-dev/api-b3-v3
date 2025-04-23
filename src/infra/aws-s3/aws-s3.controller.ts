@@ -19,6 +19,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class AwsS3Controller {
   constructor(private readonly awsS3Service: AwsS3Service) {}
 
+  /**
+   * @warning Todos os arquivos enviados serão PÚBLICOS
+   * Não utilize para dados sensíveis
+   */
   @Post('uploadfile/local')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -41,6 +45,10 @@ export class AwsS3Controller {
     return localResult;
   }
 
+  /**
+   * @warning Todos os arquivos enviados serão PÚBLICOS
+   * Não utilize para dados sensíveis
+   */
   @Post('uploadfile')
   @UseInterceptors(
     FileInterceptor('file', {
