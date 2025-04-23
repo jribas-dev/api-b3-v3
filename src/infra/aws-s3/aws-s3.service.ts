@@ -21,6 +21,7 @@ export class AwsS3Service {
   private readonly region: string;
   private readonly defaultBucket: string | undefined;
   private readonly uploadPath: string;
+  private readonly staticUrl: string;
 
   constructor(
     @Inject(S3_CLIENT) private readonly s3: S3Client,
@@ -32,11 +33,16 @@ export class AwsS3Service {
       'AWS_S3_BUCKET_NAME',
     ) as string;
     this.uploadPath = this.configService.get<string>('UPLOAD_PATH') as string;
+    this.staticUrl = this.configService.get<string>('STATIC_URL') as string;
   }
 
-  async uploadFile(file: Express.Multer.File, folder: string) {
+  async uploadLocal(
+    file: Express.Multer.File,
+    folder: string,
+    fileName: string,
+  ) {
     const targetDir = join(this.uploadPath, folder);
-    const fullPath = join(targetDir, file.originalname);
+    const fullPath = join(targetDir, fileName);
 
     try {
       await fsPromises.mkdir(targetDir, { recursive: true });
@@ -45,6 +51,7 @@ export class AwsS3Service {
         success: true,
         message: 'Arquivo enviado para servidor da aplicação',
         filePath: fullPath,
+        objectUrl: `${this.staticUrl}${folder}/${fileName}`,
       };
     } catch (error) {
       throw new InternalServerErrorException({
@@ -71,6 +78,12 @@ export class AwsS3Service {
     });
     try {
       response = await this.s3.send(command);
+      return {
+        success: true,
+        message: 'Arquivo enviado com sucesso',
+        objectUrl: `https://${targetBucket}.s3.${this.region}.amazonaws.com/${fullKey}`,
+        ETag: response.ETag,
+      };
     } catch (error) {
       if (error instanceof S3ServiceException) {
         const statusCode = error.$metadata?.httpStatusCode || 500;
@@ -79,12 +92,6 @@ export class AwsS3Service {
       }
       throw new Error(`Erro desconhecido no upload: ${error as string}`);
     }
-    return {
-      success: true,
-      message: 'Arquivo enviado com sucesso',
-      objectUrl: `https://${targetBucket}.s3.${this.region}.amazonaws.com/${fullKey}`,
-      ETag: response.ETag,
-    };
   }
 
   async deleteObject(fullKey: string, bucket?: string) {
@@ -95,6 +102,11 @@ export class AwsS3Service {
     });
     try {
       await this.s3.send(command);
+      return {
+        success: true,
+        message: 'Arquivo deletado com sucesso',
+        deletedKey: fullKey,
+      };
     } catch (error) {
       if (error instanceof S3ServiceException) {
         const statusCode = error.$metadata?.httpStatusCode;
@@ -103,10 +115,5 @@ export class AwsS3Service {
       }
       throw new Error(`Erro desconhecido no delete: ${error as string}`);
     }
-    return {
-      success: true,
-      message: 'Arquivo deletado com sucesso',
-      deletedKey: fullKey,
-    };
   }
 }

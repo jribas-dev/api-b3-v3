@@ -9,10 +9,10 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { AwsS3Service } from './aws-s3.service';
-import { PutObjectDto } from './dto/put-object.dto';
-import { DeleteObjectDto } from './dto/delete-object.dto';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { join } from 'path';
+import { ActionsFileObjectDto } from './dto/actions-file-object.dto';
 
 @UseGuards(JwtGuard)
 @Controller('infra/aws-s3')
@@ -33,15 +33,19 @@ export class AwsS3Controller {
   )
   async uploadFileLocal(
     @UploadedFile() file: Express.Multer.File,
-    @Body() dto: PutObjectDto,
+    @Body() dto: ActionsFileObjectDto,
   ) {
     if (!file) {
       throw new BadRequestException('File in a form-data is required');
     }
-    if (!dto.folder) {
+    if (!dto.folderName) {
       throw new BadRequestException('folder is required');
     }
-    const localResult = await this.awsS3Service.uploadFile(file, dto.folder);
+    const localResult = await this.awsS3Service.uploadLocal(
+      file,
+      dto.folderName,
+      dto.fileName,
+    );
     return localResult;
   }
 
@@ -59,31 +63,36 @@ export class AwsS3Controller {
   )
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
-    @Body() dto: PutObjectDto,
+    @Body() dto: ActionsFileObjectDto,
   ) {
     if (!file) {
       throw new BadRequestException('File in a form-data is required');
     }
-    if (!dto.folder) {
-      throw new BadRequestException('folder is required');
+    if (!dto.folderName) {
+      throw new BadRequestException('folderName is required');
     }
-    if (!dto.fullKey) {
-      throw new BadRequestException('fullKey is required');
+    if (!dto.fileName) {
+      throw new BadRequestException('fileName is required');
     }
+    const fullKey = join(dto.folderName, dto.fileName);
     const uploadResult = await this.awsS3Service.uploadAwsS3(
       file,
-      dto.fullKey,
+      fullKey,
       dto.bucket,
     );
     return uploadResult;
   }
 
   @Delete('deletefile')
-  async deleteFile(@Body() dto: DeleteObjectDto) {
-    const { fullKey, bucket } = dto;
-    if (!fullKey) {
-      throw new BadRequestException('fullKey is required');
+  async deleteFile(@Body() dto: ActionsFileObjectDto) {
+    const { folderName, fileName, bucket } = dto;
+    if (!folderName) {
+      throw new BadRequestException('folderName is required');
     }
+    if (!fileName) {
+      throw new BadRequestException('fileName is required');
+    }
+    const fullKey = join(folderName, fileName);
     return await this.awsS3Service.deleteObject(fullKey, bucket);
   }
 }
