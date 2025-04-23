@@ -25,25 +25,30 @@ export class AwsS3Controller {
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: PutObjectDto,
   ) {
+    if (!file) {
+      throw new BadRequestException('File in a form-data is required');
+    }
     if (!dto.folder) {
       throw new BadRequestException('folder is required');
     }
-    const savedFilePath = await this.awsS3Service.uploadFile(file, dto.folder);
-    if (savedFilePath) {
-      const uploadResult = await this.awsS3Service.uploadAwsS3(
-        savedFilePath,
-        dto.key,
-        dto.bucket,
-      );
-      if (!uploadResult) {
-        throw new BadRequestException('Failed to upload file to S3');
-      }
-      return uploadResult;
+    if (!dto.key) {
+      throw new BadRequestException('key is required');
     }
+    await this.awsS3Service.uploadFile(file, dto.folder);
+    const uploadResult = await this.awsS3Service.uploadAwsS3(
+      file,
+      dto.key,
+      dto.bucket,
+    );
+    return uploadResult;
   }
 
   @Delete('deletefile')
   async deleteFile(@Body() dto: DeleteObjectDto) {
-    return this.awsS3Service.deleteObject(dto);
+    const { key, bucket } = dto;
+    if (!key) {
+      throw new BadRequestException('key is required');
+    }
+    return await this.awsS3Service.deleteObject(key, bucket);
   }
 }

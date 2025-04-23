@@ -10,9 +10,7 @@ import {
   S3ServiceException,
   PutObjectCommandOutput,
 } from '@aws-sdk/client-s3';
-import { DeleteObjectDto } from './dto/delete-object.dto';
 import { ConfigService } from '@nestjs/config';
-import { createReadStream } from 'fs';
 import { join } from 'path';
 import { promises as fsPromises } from 'fs';
 import { S3_CLIENT } from './factories/s3-client.factory';
@@ -35,15 +33,17 @@ export class AwsS3Service {
     this.uploadPath = this.configService.get<string>('UPLOAD_PATH') as string;
   }
 
-  async uploadFile(file: Express.Multer.File, folder: string): Promise<string> {
-    console.log('uploadFile', file, folder);
+  async uploadFile(
+    file: Express.Multer.File,
+    folder: string,
+  ): Promise<boolean> {
     const targetDir = join(this.uploadPath, folder);
     const fullPath = join(targetDir, file.originalname);
 
     try {
       await fsPromises.mkdir(targetDir, { recursive: true });
       await fsPromises.writeFile(fullPath, file.buffer);
-      return fullPath;
+      return true;
     } catch (error) {
       throw new InternalServerErrorException({
         message: `Erro ao salvar arquivo no disco: ${(error as Error).message}`,
@@ -51,23 +51,28 @@ export class AwsS3Service {
     }
   }
 
-  async uploadAwsS3(filePath: string, fileKey: string, bucket?: string) {
+  async uploadAwsS3(
+    file: Express.Multer.File,
+    fileKey: string,
+    bucket?: string,
+  ) {
     let response: PutObjectCommandOutput;
     const targetBucket = bucket || this.defaultBucket;
-    const fileStream = createReadStream(filePath);
     const command = new PutObjectCommand({
       Bucket: targetBucket,
       Key: fileKey,
-      Body: fileStream,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+      ContentLength: file.size,
       ACL: 'public-read',
     });
     try {
       response = await this.s3.send(command);
     } catch (error) {
       if (error instanceof S3ServiceException) {
-        const statusCode = error.$metadata?.httpStatusCode;
+        const statusCode = error.$metadata?.httpStatusCode || 500;
         const errorMessage = `Erro no AWS S3 [${statusCode}]: ${error.name} - ${error.message}`;
-        throw new Error(errorMessage);
+        throw new InternalServerErrorException(errorMessage);
       }
       throw new Error(`Erro desconhecido no upload: ${error as string}`);
     }
@@ -79,11 +84,11 @@ export class AwsS3Service {
     };
   }
 
-  async deleteObject(dto: DeleteObjectDto) {
-    const targetBucket = dto.bucket || this.defaultBucket;
+  async deleteObject(fileKey: string, bucket?: string) {
+    const targetBucket = bucket || this.defaultBucket;
     const command = new DeleteObjectCommand({
       Bucket: targetBucket,
-      Key: dto.key,
+      Key: fileKey,
     });
     try {
       await this.s3.send(command);
@@ -91,14 +96,14 @@ export class AwsS3Service {
       if (error instanceof S3ServiceException) {
         const statusCode = error.$metadata?.httpStatusCode;
         const errorMessage = `Erro no AWS S3 [${statusCode}]: ${error.name} - ${error.message}`;
-        throw new Error(errorMessage);
+        throw new InternalServerErrorException(errorMessage);
       }
       throw new Error(`Erro desconhecido no delete: ${error as string}`);
     }
     return {
       success: true,
       message: 'Arquivo deletado com sucesso',
-      deletedKey: dto.key,
+      deletedKey: fileKey,
     };
   }
 }
