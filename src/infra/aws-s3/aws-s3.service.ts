@@ -14,6 +14,7 @@ import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
 import { promises as fsPromises } from 'fs';
 import { S3_CLIENT } from './factories/s3-client.factory';
+import { Readable } from 'stream';
 
 @Injectable()
 export class AwsS3Service {
@@ -33,17 +34,18 @@ export class AwsS3Service {
     this.uploadPath = this.configService.get<string>('UPLOAD_PATH') as string;
   }
 
-  async uploadFile(
-    file: Express.Multer.File,
-    folder: string,
-  ): Promise<boolean> {
+  async uploadFile(file: Express.Multer.File, folder: string) {
     const targetDir = join(this.uploadPath, folder);
     const fullPath = join(targetDir, file.originalname);
 
     try {
       await fsPromises.mkdir(targetDir, { recursive: true });
       await fsPromises.writeFile(fullPath, file.buffer);
-      return true;
+      return {
+        success: true,
+        message: 'Arquivo enviado para servidor da aplicação',
+        filePath: fullPath,
+      };
     } catch (error) {
       throw new InternalServerErrorException({
         message: `Erro ao salvar arquivo no disco: ${(error as Error).message}`,
@@ -53,15 +55,16 @@ export class AwsS3Service {
 
   async uploadAwsS3(
     file: Express.Multer.File,
-    fileKey: string,
+    fullKey: string,
     bucket?: string,
   ) {
     let response: PutObjectCommandOutput;
     const targetBucket = bucket || this.defaultBucket;
+    const stream = Readable.from(file.buffer);
     const command = new PutObjectCommand({
       Bucket: targetBucket,
-      Key: fileKey,
-      Body: file.buffer,
+      Key: fullKey,
+      Body: stream,
       ContentType: file.mimetype,
       ContentLength: file.size,
       ACL: 'public-read',
@@ -79,16 +82,16 @@ export class AwsS3Service {
     return {
       success: true,
       message: 'Arquivo enviado com sucesso',
-      objectUrl: `https://${targetBucket}.s3.${this.region}.amazonaws.com/${fileKey}`,
+      objectUrl: `https://${targetBucket}.s3.${this.region}.amazonaws.com/${fullKey}`,
       ETag: response.ETag,
     };
   }
 
-  async deleteObject(fileKey: string, bucket?: string) {
+  async deleteObject(fullKey: string, bucket?: string) {
     const targetBucket = bucket || this.defaultBucket;
     const command = new DeleteObjectCommand({
       Bucket: targetBucket,
-      Key: fileKey,
+      Key: fullKey,
     });
     try {
       await this.s3.send(command);
@@ -103,7 +106,7 @@ export class AwsS3Service {
     return {
       success: true,
       message: 'Arquivo deletado com sucesso',
-      deletedKey: fileKey,
+      deletedKey: fullKey,
     };
   }
 }

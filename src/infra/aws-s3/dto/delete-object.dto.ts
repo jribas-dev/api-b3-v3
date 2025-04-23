@@ -1,9 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, Matches } from 'class-validator';
 
 export class DeleteObjectDto {
   @IsString()
   @IsNotEmpty()
-  key: string;
+  @Matches(/^[a-zA-Z0-9_\-/]+$/)
+  fullKey: string;
 
   @IsString()
   @IsOptional()

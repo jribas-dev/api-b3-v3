@@ -19,8 +19,36 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class AwsS3Controller {
   constructor(private readonly awsS3Service: AwsS3Service) {}
 
+  @Post('uploadfile/local')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 1024 * 1024 * 150, // 150MB
+      },
+    }),
+  )
+  async uploadFileLocal(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: PutObjectDto,
+  ) {
+    if (!file) {
+      throw new BadRequestException('File in a form-data is required');
+    }
+    if (!dto.folder) {
+      throw new BadRequestException('folder is required');
+    }
+    const localResult = await this.awsS3Service.uploadFile(file, dto.folder);
+    return localResult;
+  }
+
   @Post('uploadfile')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 1024 * 1024 * 150, // 150MB
+      },
+    }),
+  )
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: PutObjectDto,
@@ -31,13 +59,12 @@ export class AwsS3Controller {
     if (!dto.folder) {
       throw new BadRequestException('folder is required');
     }
-    if (!dto.key) {
-      throw new BadRequestException('key is required');
+    if (!dto.fullKey) {
+      throw new BadRequestException('fullKey is required');
     }
-    await this.awsS3Service.uploadFile(file, dto.folder);
     const uploadResult = await this.awsS3Service.uploadAwsS3(
       file,
-      dto.key,
+      dto.fullKey,
       dto.bucket,
     );
     return uploadResult;
@@ -45,10 +72,10 @@ export class AwsS3Controller {
 
   @Delete('deletefile')
   async deleteFile(@Body() dto: DeleteObjectDto) {
-    const { key, bucket } = dto;
-    if (!key) {
-      throw new BadRequestException('key is required');
+    const { fullKey, bucket } = dto;
+    if (!fullKey) {
+      throw new BadRequestException('fullKey is required');
     }
-    return await this.awsS3Service.deleteObject(key, bucket);
+    return await this.awsS3Service.deleteObject(fullKey, bucket);
   }
 }
