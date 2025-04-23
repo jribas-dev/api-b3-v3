@@ -12,7 +12,7 @@ import { AwsS3Service } from './aws-s3.service';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { join } from 'path';
-import { ActionsFileObjectDto } from './dto/actions-file-object.dto';
+import { ActionsFileObjectDto } from './dtos/actions-file-object.dto';
 
 @UseGuards(JwtGuard)
 @Controller('infra/aws-s3')
@@ -74,7 +74,7 @@ export class AwsS3Controller {
     if (!dto.fileName) {
       throw new BadRequestException('fileName is required');
     }
-    const fullKey = join(dto.folderName, dto.fileName);
+    const fullKey = join(dto.folderName, dto.fileName).replace(/\\/g, '/');
     const uploadResult = await this.awsS3Service.uploadAwsS3(
       file,
       fullKey,
@@ -104,7 +104,7 @@ export class AwsS3Controller {
     if (!fileName) {
       throw new BadRequestException('fileName is required');
     }
-    const fullKey = join(folderName, fileName);
+    const fullKey = join(folderName, fileName).replace(/\\/g, '/');
     return await this.awsS3Service.deleteAwsS3(fullKey, bucket);
   }
 }
