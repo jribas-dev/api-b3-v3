@@ -31,6 +31,8 @@ export class AwsSesService {
       verificationStatus: 'PENDING',
       dkimAttributes: response.DkimAttributes,
     };
+    // dkimAttributes->Tokens (Sample DNS records to add)
+    // token1._domainkey.exemplo.com.  CNAME  token1.dkim.amazonses.com
   }
 
   async createEmailIdentity(dto: CreateEmailIdentityDto) {
