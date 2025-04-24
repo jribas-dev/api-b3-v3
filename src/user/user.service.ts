@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ResponseUserDto } from './dto/response-user.dto';
-import { plainToClass } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PasswordService } from 'src/auth/password/password.service';
 
@@ -22,7 +22,7 @@ export class UserService {
       password: await this.passwordService.hashPassword(userData.password),
     });
     const savedUser = await this.userRepo.save(user);
-    return plainToClass(ResponseUserDto, savedUser);
+    return plainToInstance(ResponseUserDto, savedUser);
   }
 
   async findAll(): Promise<ResponseUserDto[]> {
@@ -30,13 +30,13 @@ export class UserService {
     if (!users || users.length === 0) {
       throw new NotFoundException('Nenhum usuário encontrado');
     }
-    return users.map((user) => plainToClass(ResponseUserDto, user));
+    return users.map((user) => plainToInstance(ResponseUserDto, user));
   }
 
   async findOneById(userId: string): Promise<ResponseUserDto> {
     const user = await this.userRepo.findOneBy({ userId });
     if (!user) throw new NotFoundException('Usuário não encontrado');
-    return plainToClass(ResponseUserDto, user);
+    return plainToInstance(ResponseUserDto, user);
   }
 
   async findOneByEmail(email: string | undefined): Promise<UserEntity | null> {
@@ -66,6 +66,6 @@ export class UserService {
     const user = await this.findOneById(userId);
     Object.assign(user, updates);
     const updatedUser = await this.userRepo.save(user);
-    return plainToClass(ResponseUserDto, updatedUser);
+    return plainToInstance(ResponseUserDto, updatedUser);
   }
 }

@@ -17,10 +17,10 @@ export class CreateInstanceDto extends OmitType(InstanceEntity, [
   dbHost: string;
 
   @IsInt()
-  maxcompanies: number;
+  maxCompanies: number;
 
   @IsInt()
-  maxusers: number;
+  maxUsers: number;
 
   @IsBoolean()
   isActive: boolean;

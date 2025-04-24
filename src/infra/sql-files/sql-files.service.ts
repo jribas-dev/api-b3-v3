@@ -6,7 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { SqlFilesTipo } from './enums/sql-files-tipo.enum';
 import { ResponseSqlFileDto } from './dto/response-sql-file.dto';
-import { plainToClass } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class SqlFilesService {
@@ -23,7 +23,7 @@ export class SqlFilesService {
       dthrSql: new Date(),
     });
     await this.sqlFilesRepo.save(sqlFile);
-    return plainToClass(ResponseSqlFileDto, sqlFile);
+    return plainToInstance(ResponseSqlFileDto, sqlFile);
   }
 
   async findAll(): Promise<ResponseSqlFileDto[]> {
@@ -31,7 +31,7 @@ export class SqlFilesService {
     if (!sqlFiles.length) {
       throw new NotFoundException('No SQL files found');
     }
-    return sqlFiles.map((sqlFile) => plainToClass(ResponseSqlFileDto, sqlFile));
+    return sqlFiles.map((sqlFile) => plainToInstance(ResponseSqlFileDto, sqlFile));
   }
 
   async findOneById(idSql: number): Promise<ResponseSqlFileDto> {
@@ -39,7 +39,7 @@ export class SqlFilesService {
     if (!sqlFile) {
       throw new NotFoundException(`SqlFile with id ${idSql} not found`);
     }
-    return plainToClass(ResponseSqlFileDto, sqlFile);
+    return plainToInstance(ResponseSqlFileDto, sqlFile);
   }
 
   async findByDays(
@@ -59,7 +59,7 @@ export class SqlFilesService {
         `No SQL files found for system ${idsystem} in the last ${days} days`,
       );
     }
-    return sqlFiles.map((sqlFile) => plainToClass(ResponseSqlFileDto, sqlFile));
+    return sqlFiles.map((sqlFile) => plainToInstance(ResponseSqlFileDto, sqlFile));
   }
 
   async getReleasesFrom(
@@ -82,7 +82,7 @@ export class SqlFilesService {
         `No SQL files found for system ${systemId} with version greater than or equal to ${fromVersion}`,
       );
     }
-    return sqlFiles.map((sqlFile) => plainToClass(ResponseSqlFileDto, sqlFile));
+    return sqlFiles.map((sqlFile) => plainToInstance(ResponseSqlFileDto, sqlFile));
   }
 
   async getMaxVersionByType(
@@ -123,7 +123,7 @@ export class SqlFilesService {
         `No SQL file found for system ${systemId} with version ${maxVersion}`,
       );
     }
-    return plainToClass(ResponseSqlFileDto, sqlFile);
+    return plainToInstance(ResponseSqlFileDto, sqlFile);
   }
 
   async getSQLBinary(idSql: number): Promise<Buffer> {
@@ -147,7 +147,7 @@ export class SqlFilesService {
     const sqlFile = this.sqlFilesRepo.create(updateSqlFileDto);
     Object.assign(sqlFile, updateSqlFileDto);
     await this.sqlFilesRepo.save(sqlFile);
-    return plainToClass(ResponseSqlFileDto, sqlFile);
+    return plainToInstance(ResponseSqlFileDto, sqlFile);
   }
 
   async remove(id: number): Promise<void> {

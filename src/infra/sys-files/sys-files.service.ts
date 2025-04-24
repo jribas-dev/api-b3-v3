@@ -11,7 +11,7 @@ import {
   LessThanOrEqual,
 } from 'typeorm';
 import { SysFilesTipo } from './enums/sys-files-tipo.enum';
-import { plainToClass } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import { SqlFilesService } from '../sql-files/sql-files.service';
 import { SqlFilesTipo } from '../sql-files/enums/sql-files-tipo.enum';
 
@@ -42,13 +42,13 @@ export class SysFilesService {
     });
 
     await this.sysFilesRepo.save(sysFile);
-    return plainToClass(ResponseSysFileDto, sysFile);
+    return plainToInstance(ResponseSysFileDto, sysFile);
   }
 
   async findAll(): Promise<ResponseSysFileDto[]> {
     const sysFiles = await this.sysFilesRepo.find();
     if (!sysFiles.length) throw new NotFoundException('No SysFiles found');
-    return sysFiles.map((sysFile) => plainToClass(ResponseSysFileDto, sysFile));
+    return sysFiles.map((sysFile) => plainToInstance(ResponseSysFileDto, sysFile));
   }
 
   async findOneById(id: number): Promise<ResponseSysFileDto> {
@@ -57,7 +57,7 @@ export class SysFilesService {
     if (!sysFile)
       throw new NotFoundException(`SysFile with id ${id} not found`);
 
-    return plainToClass(ResponseSysFileDto, sysFile);
+    return plainToInstance(ResponseSysFileDto, sysFile);
   }
 
   async getMinorReleases(
@@ -84,7 +84,7 @@ export class SysFilesService {
         `No minor releases found for version ${versionDb}`,
       );
 
-    return sysFiles.map((file) => plainToClass(ResponseSysFileDto, file));
+    return sysFiles.map((file) => plainToInstance(ResponseSysFileDto, file));
   }
 
   async getMajorReleases(
@@ -105,7 +105,7 @@ export class SysFilesService {
         `No major releases found for version ${version} and versionDb ${versionDb}`,
       );
 
-    return sysFiles.map((file) => plainToClass(ResponseSysFileDto, file));
+    return sysFiles.map((file) => plainToInstance(ResponseSysFileDto, file));
   }
 
   async findByDays(
@@ -127,7 +127,7 @@ export class SysFilesService {
         `No SysFiles found for system ${idsystem} in the last ${days} days`,
       );
 
-    return sysFiles.map((file) => plainToClass(ResponseSysFileDto, file));
+    return sysFiles.map((file) => plainToInstance(ResponseSysFileDto, file));
   }
 
   async update(
@@ -137,7 +137,7 @@ export class SysFilesService {
     const sysFile = await this.findOneById(id);
     Object.assign(sysFile, updates);
     await this.sysFilesRepo.save(sysFile);
-    return plainToClass(ResponseSysFileDto, sysFile);
+    return plainToInstance(ResponseSysFileDto, sysFile);
   }
 
   async remove(id: number): Promise<void> {

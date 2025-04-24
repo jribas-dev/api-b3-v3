@@ -1,5 +1,6 @@
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
 import { RoleBack, RoleFront } from '../enums/user-instance-roles.enum';
+import { RelationInstanceDto } from './relation-instance.dto';
 
 @Exclude()
 export class ResponseUserInstanceDto {
@@ -20,4 +21,8 @@ export class ResponseUserInstanceDto {
 
   @Expose()
   isActive: boolean;
+
+  @Expose()
+  @Type(() => RelationInstanceDto)
+  instance: RelationInstanceDto;
 }

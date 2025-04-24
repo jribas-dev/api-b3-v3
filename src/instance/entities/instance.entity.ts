@@ -30,18 +30,18 @@ export class InstanceEntity {
   dbHost: string;
 
   @Column({ default: 1 })
-  maxcompanies: number;
+  maxCompanies: number;
 
   @Column({ default: 2 })
-  maxusers: number;
+  maxUsers: number;
 
   @Column({ default: true })
   isActive: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ select: false })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ select: false })
   updatedAt: Date;
 
   @OneToMany(() => UserInstanceEntity, (userInstance) => userInstance.instance)

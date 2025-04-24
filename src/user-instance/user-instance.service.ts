@@ -5,7 +5,7 @@ import { UserInstanceEntity } from './entities/user-instance.entity';
 import { CreateUserInstanceDto } from './dto/create-user-instance.dto';
 import { UpdateUserInstanceDto } from './dto/update-user-instance.dto';
 import { ResponseUserInstanceDto } from './dto/response-user-instance.dto';
-import { plainToClass } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class UserInstanceService {
@@ -17,7 +17,7 @@ export class UserInstanceService {
   async create(data: CreateUserInstanceDto): Promise<ResponseUserInstanceDto> {
     const newdata = this.userInstanceRepo.create({ ...data, isActive: true });
     const saved = await this.userInstanceRepo.save(newdata);
-    return plainToClass(ResponseUserInstanceDto, saved);
+    return plainToInstance(ResponseUserInstanceDto, saved);
   }
 
   async findOne(id: number): Promise<ResponseUserInstanceDto> {
@@ -25,7 +25,7 @@ export class UserInstanceService {
       where: { id },
     });
     if (!found) throw new NotFoundException('User instance not found');
-    return plainToClass(ResponseUserInstanceDto, found);
+    return plainToInstance(ResponseUserInstanceDto, found);
   }
 
   async findByUser(userId: string): Promise<ResponseUserInstanceDto[]> {
@@ -37,7 +37,7 @@ export class UserInstanceService {
       throw new NotFoundException('No user instances found');
     }
     return userInstances.map((userInstance) =>
-      plainToClass(ResponseUserInstanceDto, userInstance),
+      plainToInstance(ResponseUserInstanceDto, userInstance),
     );
   }
 
@@ -50,7 +50,7 @@ export class UserInstanceService {
       throw new NotFoundException('No user instances found');
     }
     return usersInstance.map((userInstance) =>
-      plainToClass(ResponseUserInstanceDto, userInstance),
+      plainToInstance(ResponseUserInstanceDto, userInstance),
     );
   }
 
@@ -61,6 +61,6 @@ export class UserInstanceService {
     const relation = await this.findOne(id);
     Object.assign(relation, updates);
     const saved = await this.userInstanceRepo.save(relation);
-    return plainToClass(ResponseUserInstanceDto, saved);
+    return plainToInstance(ResponseUserInstanceDto, saved);
   }
 }

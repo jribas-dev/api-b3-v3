@@ -15,10 +15,10 @@ export class ResponseInstanceDto {
   dbHost: string;
 
   @Expose()
-  maxcompanies: number;
+  maxCompanies: number;
 
   @Expose()
-  maxusers: number;
+  maxUsers: number;
 
   @Expose()
   isActive: boolean;
