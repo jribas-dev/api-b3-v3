@@ -23,7 +23,7 @@ export class SesExceptionFilter implements ExceptionFilter {
       : 500;
 
     response.status(errcode).json({
-      errorCode: exception.name,
+      errorCode: errcode,
       message: exception.message,
       awsRequestId: exception.$metadata.requestId,
     });

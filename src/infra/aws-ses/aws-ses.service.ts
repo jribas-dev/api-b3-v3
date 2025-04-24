@@ -1,26 +1,25 @@
 // ses/ses.service.ts
 import {
+  Inject,
   Injectable,
   InternalServerErrorException,
-  UseFilters,
 } from '@nestjs/common';
 import {
-  SESv2Client,
   CreateEmailIdentityCommand,
   GetEmailIdentityCommand,
   ListEmailIdentitiesCommand,
+  SESv2Client,
 } from '@aws-sdk/client-sesv2';
 import { CreateDomainIdentityDto } from './dto/create-domain-identity.dto';
 import { CreateEmailIdentityDto } from './dto/create-email-identity.dto';
-import { SesExceptionFilter } from './filter/ses-exception.filter';
 import { CheckIdentityDto } from './dto/check-identity.dto';
 import { ListIdentitiesDto } from './dto/list-identidies.dto';
+import { SES_CLIENT } from './factories/ses-client.factory';
 
 @Injectable()
 export class AwsSesService {
-  constructor(private readonly sesClient: SESv2Client) {}
+  constructor(@Inject(SES_CLIENT) private readonly sesClient: SESv2Client) {}
 
-  @UseFilters(SesExceptionFilter)
   async createDomainIdentity(dto: CreateDomainIdentityDto) {
     const command = new CreateEmailIdentityCommand({
       EmailIdentity: dto.domain,
@@ -29,12 +28,11 @@ export class AwsSesService {
     const response = await this.sesClient.send(command);
     return {
       identity: dto.domain,
-      verificationStatus: 'PENDING', // Domínios sempre requerem verificação
+      verificationStatus: 'PENDING',
       dkimAttributes: response.DkimAttributes,
     };
   }
 
-  @UseFilters(SesExceptionFilter)
   async createEmailIdentity(dto: CreateEmailIdentityDto) {
     const command = new CreateEmailIdentityCommand({
       EmailIdentity: dto.emailAddress,
@@ -43,11 +41,10 @@ export class AwsSesService {
     await this.sesClient.send(command);
     return {
       identity: dto.emailAddress,
-      verificationStatus: 'SUCCESS', // E-mails são verificados automaticamente no sandbox
+      verificationStatus: 'SUCCESS',
     };
   }
 
-  @UseFilters(SesExceptionFilter)
   async checkIdentityStatus(dto: CheckIdentityDto) {
     const command = new GetEmailIdentityCommand({
       EmailIdentity: dto.identity,
