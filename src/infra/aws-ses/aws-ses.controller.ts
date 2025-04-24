@@ -24,11 +24,25 @@ export class AwsSesController {
 
   @Post('new/domain')
   async createDomainIdentity(@Body() dto: CreateDomainIdentityDto) {
+    const accountExist = await this.sesService.checkAccountSESExist(dto.domain);
+    if (accountExist) {
+      return await this.sesService.checkIdentityStatus({
+        identity: dto.domain,
+      });
+    }
     return await this.sesService.createDomainIdentity(dto);
   }
 
   @Post('new/email')
   async createEmailIdentity(@Body() dto: CreateEmailIdentityDto) {
+    const accountExist = await this.sesService.checkAccountSESExist(
+      dto.emailAddress,
+    );
+    if (accountExist) {
+      return await this.sesService.checkIdentityStatus({
+        identity: dto.emailAddress,
+      });
+    }
     return await this.sesService.createEmailIdentity(dto);
   }
 

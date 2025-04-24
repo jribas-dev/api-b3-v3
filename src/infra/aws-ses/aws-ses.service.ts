@@ -15,10 +15,17 @@ import { CreateEmailIdentityDto } from './dto/create-email-identity.dto';
 import { CheckIdentityDto } from './dto/check-identity.dto';
 import { ListIdentitiesDto } from './dto/list-identidies.dto';
 import { SES_CLIENT } from './factories/ses-client.factory';
+import { InjectRepository } from '@nestjs/typeorm';
+import { AccountSESEntity } from './entities/account-ses.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AwsSesService {
-  constructor(@Inject(SES_CLIENT) private readonly sesClient: SESv2Client) {}
+  constructor(
+    @Inject(SES_CLIENT) private readonly sesClient: SESv2Client,
+    @InjectRepository(AccountSESEntity)
+    private readonly accountSESRepo: Repository<AccountSESEntity>,
+  ) {}
 
   async createDomainIdentity(dto: CreateDomainIdentityDto) {
     const command = new CreateEmailIdentityCommand({
@@ -53,6 +60,10 @@ export class AwsSesService {
     });
 
     const response = await this.sesClient.send(command);
+    await this.syncAccountSES(
+      dto.identity,
+      response.VerificationStatus === 'SUCCESS' ? true : false,
+    );
 
     return {
       identity: dto.identity,
@@ -61,6 +72,30 @@ export class AwsSesService {
       identityType: this.determineIdentityType(dto.identity),
       lastChecked: new Date().toISOString(),
     };
+  }
+
+  async syncAccountSES(identity: string, checked: boolean) {
+    const accountSES = await this.accountSESRepo.findOneBy({
+      identity: identity,
+    });
+    if (accountSES) {
+      accountSES.checked = checked;
+      await this.accountSESRepo.save(accountSES);
+    } else {
+      const newAccountSES = this.accountSESRepo.create({
+        identity: identity,
+        checked: checked,
+      });
+      await this.accountSESRepo.save(newAccountSES);
+    }
+  }
+
+  async checkAccountSESExist(identity: string): Promise<boolean> {
+    const accountSES = await this.accountSESRepo.findOneBy({ identity });
+    if (accountSES) {
+      return true;
+    }
+    return false;
   }
 
   async listIdentities(dto: ListIdentitiesDto) {
