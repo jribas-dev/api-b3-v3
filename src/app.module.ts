@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { InfraModule } from './infra/infra.module';
+import { B3vendasModule } from './b3vendas/b3vendas.module';
 
 @Module({
   imports: [
@@ -41,6 +42,8 @@ import { InfraModule } from './infra/infra.module';
     AuthModule,
 
     InfraModule,
+
+    B3vendasModule,
   ],
   controllers: [AppController],
   providers: [AppService],
