@@ -1,9 +1,8 @@
-import { Column, Entity, Unique } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity({ name: 'account_ses' })
 export class AccountSESEntity {
-  @Column({ type: 'varchar', length: 255 })
-  @Unique('uq_account_ses_identity', ['identity'])
+  @PrimaryColumn({ type: 'varchar', length: 255 })
   identity: string;
 
   @Column({ type: 'boolean', default: false })

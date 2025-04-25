@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   CreateEmailIdentityCommand,
+  DeleteEmailIdentityCommand,
   GetEmailIdentityCommand,
   ListEmailIdentitiesCommand,
   SESv2Client,
@@ -35,8 +36,11 @@ export class AwsSesService {
     const response = await this.sesClient.send(command);
     return {
       identity: dto.domain,
+      identityType: 'DOMAIN',
       verificationStatus: 'PENDING',
-      dkimAttributes: response.DkimAttributes,
+      dnsRecords: response.DkimAttributes?.Tokens?.map((token) => ({
+        token: `CNAME ${token}._domainkey.${dto.domain}  => Target: ${token}.dkim.amazonses.com`,
+      })),
     };
     // dkimAttributes->Tokens (Sample DNS records to add)
     // token1._domainkey.exemplo.com.  CNAME  token1.dkim.amazonses.com
@@ -50,7 +54,25 @@ export class AwsSesService {
     await this.sesClient.send(command);
     return {
       identity: dto.emailAddress,
-      verificationStatus: 'SUCCESS',
+      identityType: 'EMAIL',
+      verificationStatus: 'PENDING',
+    };
+  }
+
+  async DeleteIdentity(dto: CheckIdentityDto) {
+    const command = new DeleteEmailIdentityCommand({
+      EmailIdentity: dto.identity,
+    });
+    await this.sesClient.send(command);
+    const accountSES = await this.accountSESRepo.findOneBy({
+      identity: dto.identity,
+    });
+    if (accountSES) {
+      await this.accountSESRepo.remove(accountSES);
+    }
+    return {
+      identity: dto.identity,
+      message: 'Identity deleted successfully',
     };
   }
 
@@ -65,11 +87,19 @@ export class AwsSesService {
       response.VerificationStatus === 'SUCCESS' ? true : false,
     );
 
+    let dnsRecords: string[] | undefined = undefined;
+    if (this.determineIdentityType(dto.identity) === 'DOMAIN') {
+      dnsRecords = response.DkimAttributes?.Tokens?.map(
+        (token, i) =>
+          `${i + 1}) CNAME  ${token}._domainkey.${dto.identity}  TARGET  ${token}.dkim.amazonses.com`,
+      );
+    }
+
     return {
       identity: dto.identity,
       verificationStatus: response.VerificationStatus,
-      dkimAttributes: response.DkimAttributes,
       identityType: this.determineIdentityType(dto.identity),
+      dnsRecords: dnsRecords,
       lastChecked: new Date().toISOString(),
     };
   }
@@ -88,6 +118,14 @@ export class AwsSesService {
       });
       await this.accountSESRepo.save(newAccountSES);
     }
+  }
+
+  async createAccountSES(identity: string) {
+    const accountSES = this.accountSESRepo.create({
+      identity: identity,
+      checked: false,
+    });
+    await this.accountSESRepo.save(accountSES);
   }
 
   async checkAccountSESExist(identity: string): Promise<boolean> {

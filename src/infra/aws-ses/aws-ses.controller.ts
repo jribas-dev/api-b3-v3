@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Post,
   Query,
@@ -30,7 +31,9 @@ export class AwsSesController {
         identity: dto.domain,
       });
     }
-    return await this.sesService.createDomainIdentity(dto);
+    const response = await this.sesService.createDomainIdentity(dto);
+    await this.sesService.createAccountSES(dto.domain);
+    return response;
   }
 
   @Post('new/email')
@@ -43,12 +46,19 @@ export class AwsSesController {
         identity: dto.emailAddress,
       });
     }
-    return await this.sesService.createEmailIdentity(dto);
+    const response = await this.sesService.createEmailIdentity(dto);
+    await this.sesService.createAccountSES(dto.emailAddress);
+    return response;
   }
 
   @Get('identities/check')
   async checkIdentityStatus(@Query() dto: CheckIdentityDto) {
     return await this.sesService.checkIdentityStatus(dto);
+  }
+
+  @Delete('identities/delete')
+  async removeIdentity(@Query() dto: CheckIdentityDto) {
+    return await this.sesService.DeleteIdentity(dto);
   }
 
   @UseGuards(RootGuard)
