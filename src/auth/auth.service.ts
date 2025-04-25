@@ -88,7 +88,7 @@ export class AuthService {
     return {
       accessToken,
       tokenType: 'Bearer',
-      expiresIn: 3600,
+      expiresIn: 1800,
     };
   }
 
@@ -105,50 +105,54 @@ export class AuthService {
       expiresIn: '180m',
     });
 
-    const refreshToken = await this.refreshTokenService.generate(
-      userInstance.user,
-    );
+    const refreshToken = await this.refreshTokenService.generate(userInstance);
 
     return {
       accessToken,
       refreshToken,
       tokenType: 'Bearer',
-      expiresIn: 3600,
+      expiresIn: 10800,
     };
   }
 
-  async refresh(oldToken: string) {
+  async refresh(oldToken: string, req: Request) {
     const tokenData = await this.refreshTokenService.validate(oldToken);
 
     if (!tokenData) {
       throw new UnauthorizedException('Refresh token inválido ou expirado');
     }
 
-    const user = tokenData.user;
+    const user = tokenData.userInstance.user;
+    const instance = tokenData.userInstance.instance;
 
     const payload: JwtPayload = {
       sub: user.userId,
       email: user.email,
       isRoot: user.isRoot,
+      instanceName: instance.name,
+      dbId: instance.dbId,
     };
 
     const newAccessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '60m',
+      expiresIn: '180m',
     });
 
-    const newRefreshToken = await this.refreshTokenService.generate(user);
+    const newRefreshToken = await this.refreshTokenService.generate(
+      tokenData.userInstance,
+    );
 
     await this.refreshTokenService.revoke(oldToken);
+    await this.logout(req);
 
     return {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
       tokenType: 'Bearer',
-      expiresIn: 3600,
+      expiresIn: 10800,
     };
   }
 
-  async logout(req: Request): Promise<{ message: string }> {
+  async logout(req: Request): Promise<boolean> {
     const authHeader = req.headers.authorization as string;
     const token = authHeader.replace('Bearer ', '').trim();
     const decoded: { exp?: number } | null = this.jwtService.decode(token);
@@ -158,6 +162,6 @@ export class AuthService {
       await this.blacklistService.addToken(token, expiresAt);
     }
 
-    return { message: 'Logout realizado com sucesso' };
+    return true;
   }
 }

@@ -37,11 +37,13 @@ export class UserInstanceEntity {
   @Column({ default: true })
   isActive: boolean;
 
-  @ManyToOne(() => UserEntity, (user) => user.instances)
+  @ManyToOne(() => UserEntity, (user) => user.instances, { eager: true })
   @JoinColumn({ name: 'userId' })
   user: UserEntity;
 
-  @ManyToOne(() => InstanceEntity, (instance) => instance.users)
+  @ManyToOne(() => InstanceEntity, (instance) => instance.users, {
+    eager: true,
+  })
   @JoinColumn({ name: 'dbId' })
   instance: InstanceEntity;
 }

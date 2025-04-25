@@ -4,6 +4,7 @@ import {
   Param,
   NotFoundException,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import {
@@ -28,6 +29,24 @@ export class AppController {
   @Get('hello')
   getHello(): string {
     return this.appService.getHello();
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('session')
+  getSession(
+    @Req()
+    req: Request & {
+      user: {
+        userId: string;
+        email: string;
+        isRoot: boolean;
+        dbId: string | undefined;
+        instanceName: string | undefined;
+      };
+    },
+  ) {
+    const user = req.user;
+    return user;
   }
 
   @UseGuards(JwtGuard)

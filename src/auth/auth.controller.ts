@@ -63,18 +63,20 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @UseGuards(JwtGuard, UserInstanceGuard)
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtGuard)
-  @UseGuards(UserInstanceGuard)
-  async refresh(@Body() body: { refreshToken: string }) {
-    return this.authService.refresh(body.refreshToken);
+  async refresh(@Req() req: Request, @Body() body: { refreshToken: string }) {
+    return this.authService.refresh(body.refreshToken, req);
   }
 
   @Post('logout')
+  @UseGuards(JwtGuard, UserInstanceGuard)
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtGuard)
-  @UseGuards(UserInstanceGuard)
   async logout(@Req() req: Request): Promise<{ message: string }> {
-    return await this.authService.logout(req);
+    if (await this.authService.logout(req)) {
+      return { message: 'Logout realizado com sucesso' };
+    } else {
+      throw new BadRequestException('Logout falhou');
+    }
   }
 }
