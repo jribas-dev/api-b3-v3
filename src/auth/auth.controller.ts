@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginAttemptService } from './login-attempt/login-attempt.service';
@@ -13,6 +14,7 @@ import { Request } from 'express';
 import { JwtGuard } from './guards/jwt.guard';
 import { BlacklistService } from './black-list/black-list.service';
 import { JwtService } from '@nestjs/jwt';
+import { UserInstanceGuard } from './guards/user-instance.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -44,20 +46,40 @@ export class AuthController {
     }
   }
 
+  @Post('instance')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtGuard)
+  async selectInstance(
+    @Req() req: Request & { user: { isRoot: boolean; userId: string } },
+    @Body() inputDto: { dbId: string },
+  ) {
+    if (!req.user.userId || !inputDto.dbId) {
+      throw new BadRequestException(
+        'ID do usuário ou ID da instância não fornecidos.',
+      );
+    }
+    const validUser = await this.authService.validateUserInstance(
+      req.user.userId,
+      inputDto.dbId,
+    );
+    const tokenResponse = await this.authService.loginInstance(validUser);
+    return tokenResponse;
+  }
+
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtGuard)
+  @UseGuards(UserInstanceGuard)
   async refresh(@Body() body: { refreshToken: string }) {
     return this.authService.refresh(body.refreshToken);
   }
 
   @Post('logout')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard)
+  @UseGuards(UserInstanceGuard)
   async logout(@Req() req: Request): Promise<{ message: string }> {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return { message: 'Token de autenticação não encontrado.' };
-    }
-
+    const authHeader = req.headers.authorization as string;
     const token = authHeader.replace('Bearer ', '').trim();
     const decoded: { exp?: number } | null = this.jwtService.decode(token);
 

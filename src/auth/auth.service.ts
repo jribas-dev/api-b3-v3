@@ -12,12 +12,16 @@ import { LoginAttemptService } from './login-attempt/login-attempt.service';
 import { JwtPayload } from './jwt/jwt.payload.interface';
 import { Request } from 'express';
 import { UserEntity } from 'src/user/entities/user.entity';
+import { UserInstanceService } from 'src/user-instance/user-instance.service';
+import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @Inject(forwardRef(() => UserService))
+    @Inject(forwardRef(() => UserInstanceService))
     private readonly userService: UserService,
+    private readonly userInstanceService: UserInstanceService,
     private readonly jwtService: JwtService,
     private readonly refreshTokenService: RefreshTokenService,
     private readonly passwordService: PasswordService,
@@ -57,6 +61,17 @@ export class AuthService {
     return user;
   }
 
+  async validateUserInstance(
+    userId: string,
+    dbId: string,
+  ): Promise<UserInstanceEntity> {
+    const userInstance = await this.userInstanceService.findValid(userId, dbId);
+    if (!userInstance) {
+      throw new UnauthorizedException('Usuário ou instância inválidos');
+    }
+    return userInstance;
+  }
+
   async login(user: UserEntity) {
     const payload = {
       sub: user.userId,
@@ -65,10 +80,32 @@ export class AuthService {
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '60m',
+      expiresIn: '30m',
     });
 
-    const refreshToken = await this.refreshTokenService.generate(user);
+    return {
+      accessToken,
+      tokenType: 'Bearer',
+      expiresIn: 3600,
+    };
+  }
+
+  async loginInstance(userInstance: UserInstanceEntity) {
+    const payload = {
+      sub: userInstance.userId,
+      email: userInstance.user.email,
+      isRoot: userInstance.user.isRoot,
+      instanceName: userInstance.instance.name,
+      dbId: userInstance.dbId,
+    };
+
+    const accessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '180m',
+    });
+
+    const refreshToken = await this.refreshTokenService.generate(
+      userInstance.user,
+    );
 
     return {
       accessToken,

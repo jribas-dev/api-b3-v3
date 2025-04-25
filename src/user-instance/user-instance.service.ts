@@ -28,6 +28,15 @@ export class UserInstanceService {
     return plainToInstance(ResponseUserInstanceDto, found);
   }
 
+  async findValid(userId: string, dbId: string): Promise<UserInstanceEntity> {
+    const found = await this.userInstanceRepo.findOne({
+      where: { userId, dbId, isActive: true },
+      relations: ['user', 'instance'],
+    });
+    if (!found) throw new NotFoundException('User instance not found');
+    return found;
+  }
+
   async findByUser(userId: string): Promise<ResponseUserInstanceDto[]> {
     const userInstances = await this.userInstanceRepo.find({
       where: { userId, isActive: true },
