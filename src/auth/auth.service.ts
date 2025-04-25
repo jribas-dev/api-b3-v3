@@ -14,6 +14,7 @@ import { Request } from 'express';
 import { UserEntity } from 'src/user/entities/user.entity';
 import { UserInstanceService } from 'src/user-instance/user-instance.service';
 import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
+import { BlacklistService } from './black-list/black-list.service';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +27,7 @@ export class AuthService {
     private readonly refreshTokenService: RefreshTokenService,
     private readonly passwordService: PasswordService,
     private readonly loginAttemptService: LoginAttemptService,
+    private readonly blacklistService: BlacklistService,
   ) {}
 
   async validate(
@@ -144,5 +146,18 @@ export class AuthService {
       tokenType: 'Bearer',
       expiresIn: 3600,
     };
+  }
+
+  async logout(req: Request): Promise<{ message: string }> {
+    const authHeader = req.headers.authorization as string;
+    const token = authHeader.replace('Bearer ', '').trim();
+    const decoded: { exp?: number } | null = this.jwtService.decode(token);
+
+    if (decoded?.exp) {
+      const expiresAt = new Date(decoded.exp * 1000);
+      await this.blacklistService.addToken(token, expiresAt);
+    }
+
+    return { message: 'Logout realizado com sucesso' };
   }
 }

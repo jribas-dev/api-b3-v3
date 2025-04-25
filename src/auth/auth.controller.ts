@@ -12,8 +12,6 @@ import { AuthService } from './auth.service';
 import { LoginAttemptService } from './login-attempt/login-attempt.service';
 import { Request } from 'express';
 import { JwtGuard } from './guards/jwt.guard';
-import { BlacklistService } from './black-list/black-list.service';
-import { JwtService } from '@nestjs/jwt';
 import { UserInstanceGuard } from './guards/user-instance.guard';
 
 @Controller('auth')
@@ -21,8 +19,6 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly loginAttemptService: LoginAttemptService,
-    private readonly jwtService: JwtService,
-    private readonly blacklistService: BlacklistService,
   ) {}
 
   @Post('login')
@@ -79,15 +75,6 @@ export class AuthController {
   @UseGuards(JwtGuard)
   @UseGuards(UserInstanceGuard)
   async logout(@Req() req: Request): Promise<{ message: string }> {
-    const authHeader = req.headers.authorization as string;
-    const token = authHeader.replace('Bearer ', '').trim();
-    const decoded: { exp?: number } | null = this.jwtService.decode(token);
-
-    if (decoded?.exp) {
-      const expiresAt = new Date(decoded.exp * 1000);
-      await this.blacklistService.addToken(token, expiresAt);
-    }
-
-    return { message: 'Logout realizado com sucesso.' };
+    return await this.authService.logout(req);
   }
 }
