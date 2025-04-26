@@ -8,7 +8,7 @@ import {
 import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
 
 @Entity({ name: 'token_refresh' })
-export class RefreshToken {
+export class RefreshTokenEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

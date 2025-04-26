@@ -6,7 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt/jwt.strategy';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RefreshToken } from './refresh-token/refresh-token.entity';
+import { RefreshTokenEntity } from './refresh-token/refresh-token.entity';
 import { RefreshTokenService } from './refresh-token/refresh-token.service';
 import { LoginAttemptService } from './login-attempt/login-attempt.service';
 import { BlacklistModule } from './black-list/black-list.module';
@@ -17,11 +17,20 @@ import { UserService } from 'src/user/user.service';
 import { UserInstanceModule } from 'src/user-instance/user-instance.module';
 import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
 import { UserInstanceService } from 'src/user-instance/user-instance.service';
+import { ResetPasswordService } from './reset-password/reset-password.service';
+import { AwsSenderModule } from 'src/infra/aws-ses/sender/sender.module';
+import { ResetPasswordController } from './reset-password/reset-password.controller';
+import { ResetPasswordEntity } from './reset-password/reset-password.entity';
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([UserEntity, RefreshToken, UserInstanceEntity]),
+    TypeOrmModule.forFeature([
+      UserEntity,
+      RefreshTokenEntity,
+      UserInstanceEntity,
+      ResetPasswordEntity,
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -38,6 +47,7 @@ import { UserInstanceService } from 'src/user-instance/user-instance.service';
     UserModule,
     UserInstanceModule,
     BlacklistModule,
+    AwsSenderModule,
   ],
   providers: [
     AuthService,
@@ -47,8 +57,9 @@ import { UserInstanceService } from 'src/user-instance/user-instance.service';
     PasswordService,
     UserService,
     UserInstanceService,
+    ResetPasswordService,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, ResetPasswordController],
   exports: [AuthService],
 })
 export class AuthModule {}

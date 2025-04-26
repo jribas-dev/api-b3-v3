@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RefreshToken } from './refresh-token.entity';
+import { RefreshTokenEntity } from './refresh-token.entity';
 import { randomBytes } from 'crypto';
 import { addDays } from 'date-fns';
 import { isDate } from 'date-fns';
@@ -10,8 +10,8 @@ import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.ent
 @Injectable()
 export class RefreshTokenService {
   constructor(
-    @InjectRepository(RefreshToken)
-    private tokenRepo: Repository<RefreshToken>,
+    @InjectRepository(RefreshTokenEntity)
+    private tokenRepo: Repository<RefreshTokenEntity>,
   ) {}
 
   async generate(userInstance: UserInstanceEntity): Promise<string> {
@@ -28,7 +28,7 @@ export class RefreshTokenService {
     return token;
   }
 
-  async validate(token: string): Promise<RefreshToken | null> {
+  async validate(token: string): Promise<RefreshTokenEntity | null> {
     const rt = await this.tokenRepo.findOne({
       where: { token },
       relations: ['userInstance'],
