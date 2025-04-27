@@ -10,5 +10,6 @@ import { AwsSenderModule } from './sender/sender.module';
   imports: [TypeOrmModule.forFeature([AccountSESEntity]), AwsSenderModule],
   providers: [AwsSesService, SesClientFactory],
   controllers: [AwsSesController],
+  exports: [AwsSenderModule],
 })
 export class AwsSesModule {}

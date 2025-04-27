@@ -4,6 +4,7 @@ import { TemplateFactory } from './factories/template-factory.service';
 import { WelcomeHandler } from './handlers/welcome.handler';
 import { PasswordResetHandler } from './handlers/password-reset.handler';
 import { SesClientFactory } from '../factories/ses-client.factory';
+import { NewUserCallHandler } from './handlers/newuser-call.handler';
 
 @Module({
   providers: [
@@ -11,6 +12,7 @@ import { SesClientFactory } from '../factories/ses-client.factory';
     TemplateFactory,
     WelcomeHandler,
     PasswordResetHandler,
+    NewUserCallHandler,
     SesClientFactory,
   ],
   exports: [AwsSenderService],

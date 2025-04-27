@@ -9,6 +9,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { InfraModule } from './infra/infra.module';
 import { B3vendasModule } from './b3vendas/b3vendas.module';
+import { UserPreModule } from './user-pre/user-pre.module';
 
 @Module({
   imports: [
@@ -42,6 +43,8 @@ import { B3vendasModule } from './b3vendas/b3vendas.module';
     AuthModule,
 
     InfraModule,
+
+    UserPreModule,
 
     B3vendasModule,
   ],

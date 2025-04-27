@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
 import { createId } from '@paralleldrive/cuid2';
+import { UserPreInstanceEntity } from 'src/user-pre/entities/user-pre-instances.entity';
 
 @Entity({ name: 'instance' })
 export class InstanceEntity {
@@ -46,4 +47,10 @@ export class InstanceEntity {
 
   @OneToMany(() => UserInstanceEntity, (userInstance) => userInstance.instance)
   users: UserInstanceEntity[];
+
+  @OneToMany(
+    () => UserPreInstanceEntity,
+    (userInstance) => userInstance.instance,
+  )
+  usersPre: UserPreInstanceEntity[];
 }

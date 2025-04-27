@@ -7,6 +7,8 @@ import { ResponseUserDto } from './dto/response-user.dto';
 import { plainToInstance } from 'class-transformer';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PasswordService } from 'src/auth/password/password.service';
+import { TemplateType } from 'src/infra/aws-ses/sender/enums/template-type.enum';
+import { AwsSenderService } from 'src/infra/aws-ses/sender/sender.service';
 
 @Injectable()
 export class UserService {
@@ -14,6 +16,7 @@ export class UserService {
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
     private readonly passwordService: PasswordService,
+    private readonly senderService: AwsSenderService,
   ) {}
 
   async create(userData: CreateUserDto): Promise<ResponseUserDto> {
@@ -22,6 +25,15 @@ export class UserService {
       password: await this.passwordService.hashPassword(userData.password),
     });
     const savedUser = await this.userRepo.save(user);
+
+    // Send email with the token
+    await this.senderService.sendTemplateEmail(
+      savedUser.email,
+      'Bem-vindo ao sistema B3Erp',
+      TemplateType.WELCOME,
+      { name: savedUser },
+    );
+
     return plainToInstance(ResponseUserDto, savedUser);
   }
 
