@@ -27,10 +27,10 @@ export class ResetPasswordService {
     if (!user.isActive)
       throw new NotFoundException('Invalid user, call support');
 
-    // Gerar token (pode usar UUID, cuid, etc.)
     const token = randomBytes(88).toString('hex');
-    const resetEntity = this.resetRepo.create({ user, token });
-    await this.resetRepo.save(resetEntity);
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hora de expiração
+    const newReset = this.resetRepo.create({ user, token, expiresAt });
+    await this.resetRepo.save(newReset);
 
     const resetLink = `${frontUrl}?token=${token}?email=${user.email}`;
 
@@ -43,7 +43,7 @@ export class ResetPasswordService {
 
     return {
       success: true,
-      message: 'Password reset email sent',
+      message: 'Password reset email sent, you have 1 hour to reset it.',
       email: user.email,
       token: token,
     };

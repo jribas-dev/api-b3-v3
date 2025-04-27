@@ -21,6 +21,6 @@ export class ResetPasswordEntity {
   @Column()
   expiresAt: Date;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ select: false })
   createdAt: Date;
 }
