@@ -38,6 +38,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       isRoot: payload.isRoot,
       instanceName: payload.instanceName,
       dbId: payload.dbId,
+      roleBack: payload.roleBack,
+      roleFront: payload.roleFront,
     };
   }
 }

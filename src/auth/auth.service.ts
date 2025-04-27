@@ -99,6 +99,8 @@ export class AuthService {
       isRoot: userInstance.user.isRoot,
       instanceName: userInstance.instance.name,
       dbId: userInstance.dbId,
+      roleBack: userInstance.roleback,
+      roleFront: userInstance.rolefront,
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
@@ -131,6 +133,8 @@ export class AuthService {
       isRoot: user.isRoot,
       instanceName: instance.name,
       dbId: instance.dbId,
+      roleBack: tokenData.userInstance.roleback,
+      roleFront: tokenData.userInstance.rolefront,
     };
 
     const newAccessToken = await this.jwtService.signAsync(payload, {
