@@ -2,11 +2,12 @@ export enum RoleBack {
   ADMIN = 'admin',
   SUPER = 'supervisor',
   USER = 'user',
-  RONLY = 'readonly',
+  NOTALLOW = 'notallow',
 }
 
 export enum RoleFront {
   SUPER = 'supervisor',
   SALER = 'saler',
   BUYER = 'buyer',
+  NOTALLOW = 'notallow',
 }

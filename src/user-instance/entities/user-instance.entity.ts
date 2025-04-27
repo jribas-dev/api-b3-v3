@@ -30,7 +30,7 @@ export class UserInstanceEntity {
   @Column({
     type: 'enum',
     enum: RoleFront,
-    default: RoleFront.BUYER,
+    default: RoleFront.NOTALLOW,
   })
   rolefront: RoleFront;
 
