@@ -26,12 +26,12 @@ export class UserService {
     });
     const savedUser = await this.userRepo.save(user);
 
-    // Send email with the token
+    // Send welcome email
     await this.senderService.sendTemplateEmail(
       savedUser.email,
       'Bem-vindo ao sistema B3Erp',
       TemplateType.WELCOME,
-      { name: savedUser },
+      { name: savedUser.name },
     );
 
     return plainToInstance(ResponseUserDto, savedUser);
