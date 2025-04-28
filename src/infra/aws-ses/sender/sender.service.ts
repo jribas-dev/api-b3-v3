@@ -37,7 +37,8 @@ export class AwsSenderService {
     try {
       const fromAddress = this.fromAddress || 'passport@3b3.com.br';
       const command = new SendEmailCommand({
-        FromEmailAddress: fromAddress,
+        FromEmailAddress: `"B3Erp Software" <${fromAddress}>`,
+        ReplyToAddresses: [fromAddress],
         Destination: { ToAddresses: [recipient] },
         Content: {
           Simple: {
