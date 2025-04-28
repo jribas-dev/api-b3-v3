@@ -62,7 +62,7 @@ export class UserPreService {
     }
     // Send email with the token
     const hostlink = 'http://localhost:3000/user-pre/check';
-    const newUserLink = `${hostlink}&token=${userPre.token}?email=${data.email}`;
+    const newUserLink = `${hostlink}?token=${userPre.token}&email=${data.email}`;
 
     await this.senderService.sendTemplateEmail(
       data.email,
