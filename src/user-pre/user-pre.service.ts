@@ -14,6 +14,8 @@ import { UserService } from 'src/user/user.service';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { AwsSenderService } from 'src/infra/aws-ses/sender/sender.service';
 import { TemplateType } from 'src/infra/aws-ses/sender/enums/template-type.enum';
+import { ResponseUserDto } from 'src/user/dto/response-user.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class UserPreService {
@@ -80,10 +82,13 @@ export class UserPreService {
     return userPre;
   }
 
-  async confirmUser(data: CreateUserDto, check: CheckUserPreDto) {
+  async confirmUser(
+    data: CreateUserDto,
+    check: CheckUserPreDto,
+  ): Promise<ResponseUserDto> {
     const userPre = await this.checkUserPre(check);
     const user = await this.userService.create(data);
     await this.userPreRepo.delete(userPre.userPreId);
-    return user;
+    return plainToInstance(ResponseUserDto, user);
   }
 }
