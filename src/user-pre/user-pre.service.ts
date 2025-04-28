@@ -86,6 +86,9 @@ export class UserPreService {
     data: CreateUserDto,
     check: CheckUserPreDto,
   ): Promise<ResponseUserDto> {
+    if (check.email.trim() !== data.email.trim()) {
+      throw new UnauthorizedException('Email does not match token');
+    }
     const userPre = await this.checkUserPre(check);
     const user = await this.userService.create(data);
     await this.userPreRepo.delete(userPre.userPreId);
