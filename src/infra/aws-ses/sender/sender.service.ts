@@ -46,7 +46,6 @@ export class AwsSenderService {
           },
         },
       });
-
       const response = await this.sesClient.send(command);
       return {
         statusCode: 200,

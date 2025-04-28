@@ -6,11 +6,13 @@ import { UserPreEntity } from './entities/user-pre.entity';
 import { UserPreInstanceEntity } from './entities/user-pre-instances.entity';
 import { AwsSenderModule } from 'src/infra/aws-ses/sender/sender.module';
 import { UserModule } from 'src/user/user.module';
+import { UserInstanceModule } from 'src/user-instance/user-instance.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserPreEntity, UserPreInstanceEntity]),
     UserModule,
+    UserInstanceModule,
     AwsSenderModule,
   ],
   providers: [UserPreService],

@@ -16,6 +16,7 @@ import { AwsSenderService } from 'src/infra/aws-ses/sender/sender.service';
 import { TemplateType } from 'src/infra/aws-ses/sender/enums/template-type.enum';
 import { ResponseUserDto } from 'src/user/dto/response-user.dto';
 import { plainToInstance } from 'class-transformer';
+import { UserInstanceService } from 'src/user-instance/user-instance.service';
 
 @Injectable()
 export class UserPreService {
@@ -25,10 +26,15 @@ export class UserPreService {
     @InjectRepository(UserPreInstanceEntity)
     private readonly userPreInstanceRepo: Repository<UserPreInstanceEntity>,
     private readonly userService: UserService,
+    private readonly userInstanceService: UserInstanceService,
     private readonly senderService: AwsSenderService,
   ) {}
 
   async create(data: CreateUserPreDto): Promise<UserPreEntity> {
+    const existingUser = await this.userService.findOneByEmail(data.email);
+    if (existingUser) {
+      throw new UnauthorizedException('User already exists');
+    }
     const existingUserPre = await this.userPreRepo.findOne({
       where: { email: data.email },
     });
@@ -46,7 +52,7 @@ export class UserPreService {
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 12), // 12 hours
     });
     const newUserPre = await this.userPreRepo.save(userPre);
-    for (const { dbId, roleBack, roleFront } of data.instances) {
+    for (const { dbId, roleBack, roleFront } of data.dblist) {
       const userPreInstance = this.userPreInstanceRepo.create();
       userPreInstance.userPreId = newUserPre.userPreId;
       userPreInstance.dbId = dbId;
@@ -55,8 +61,8 @@ export class UserPreService {
       await this.userPreInstanceRepo.save(userPreInstance);
     }
     // Send email with the token
-    const hostlink = 'http://localhost:3000/user-pre/confirm';
-    const newUserLink = `${hostlink}?token=${userPre.token}?email=${data.email}`;
+    const hostlink = 'http://localhost:3000/user-pre/check';
+    const newUserLink = `${hostlink}&token=${userPre.token}?email=${data.email}`;
 
     await this.senderService.sendTemplateEmail(
       data.email,
@@ -90,7 +96,19 @@ export class UserPreService {
       throw new UnauthorizedException('Email does not match token');
     }
     const userPre = await this.checkUserPre(check);
+    const userPreInstances = await this.userPreInstanceRepo.find({
+      where: { userPreId: userPre.userPreId },
+    });
     const user = await this.userService.create(data);
+    for (const userPreInstance of userPreInstances) {
+      await this.userInstanceService.addUserInstance({
+        userId: user.userId,
+        dbId: userPreInstance.dbId,
+        roleback: userPreInstance.roleback,
+        rolefront: userPreInstance.rolefront,
+        isActive: true,
+      });
+    }
     await this.userPreRepo.delete(userPre.userPreId);
     return plainToInstance(ResponseUserDto, user);
   }

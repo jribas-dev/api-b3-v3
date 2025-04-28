@@ -30,7 +30,7 @@ export class AwsS3Service {
     this.region =
       (this.configService.get<string>('AWS_REGION') as string) || 'us-east-1';
     this.defaultBucket = this.configService.get<string>(
-      'AWS_S3_BUCKET_NAME',
+      'S3_BUCKET_NAME',
     ) as string;
     this.uploadPath = this.configService.get<string>('UPLOAD_PATH') as string;
     this.staticUrl = this.configService.get<string>('STATIC_URL') as string;

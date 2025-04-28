@@ -6,12 +6,12 @@ import {
   HttpStatus,
   Post,
   Query,
-  UseGuards,
+  // UseGuards,
 } from '@nestjs/common';
-import { RolesBack } from 'src/auth/decorators/roles-back.decorator';
-import { JwtGuard } from 'src/auth/guards/jwt.guard';
-import { RolesBackGuard } from 'src/auth/guards/roles-back.guard';
-import { RoleBack } from 'src/user-instance/enums/user-instance-roles.enum';
+// import { RolesBack } from 'src/auth/decorators/roles-back.decorator';
+// import { JwtGuard } from 'src/auth/guards/jwt.guard';
+// import { RolesBackGuard } from 'src/auth/guards/roles-back.guard';
+// import { RoleBack } from 'src/user-instance/enums/user-instance-roles.enum';
 import { UserPreService } from './user-pre.service';
 import { CreateUserPreDto } from './dto/create-user-pre.dto';
 import { CheckUserPreDto } from './dto/check-user-pre.dto';
@@ -21,9 +21,9 @@ import { ConfirmUserPreDto } from './dto/confirm-user-pre.dto';
 export class UserPreController {
   constructor(private readonly userPreService: UserPreService) {}
 
-  @UseGuards(JwtGuard, RolesBackGuard)
-  @RolesBack(RoleBack.ADMIN, RoleBack.SUPER)
-  @Post()
+  // @UseGuards(JwtGuard, RolesBackGuard)
+  // @RolesBack(RoleBack.ADMIN, RoleBack.USER)
+  @Post('create')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() data: CreateUserPreDto) {
     return this.userPreService.create(data);

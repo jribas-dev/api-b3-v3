@@ -20,6 +20,11 @@ export class UserInstanceService {
     return plainToInstance(ResponseUserInstanceDto, saved);
   }
 
+  async addUserInstance(data: CreateUserInstanceDto): Promise<void> {
+    const newdata = this.userInstanceRepo.create({ ...data, isActive: true });
+    await this.userInstanceRepo.save(newdata);
+  }
+
   async findOne(id: number): Promise<ResponseUserInstanceDto> {
     const found = await this.userInstanceRepo.findOne({
       where: { id },

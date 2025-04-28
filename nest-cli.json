@@ -5,6 +5,7 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [
+      { "include": "./infra/aws-ses/sender/layouts/**/*" },
       { "include": "../assets/**/*", "outDir": "dist/assets" }
     ]  
   }

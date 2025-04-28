@@ -7,8 +7,8 @@ export const SesClientFactory = {
   provide: SES_CLIENT,
   useFactory: (configService: ConfigService): SESv2Client => {
     const region = configService.get<string>('AWS_REGION') as string;
-    const aKeyId = configService.get<string>('AWS_SES_KEY') as string;
-    const sKeyId = configService.get<string>('AWS_SES_PASS') as string;
+    const aKeyId = configService.get<string>('AWS_SDK_KEY') as string;
+    const sKeyId = configService.get<string>('AWS_SDK_SECRET') as string;
 
     return new SESv2Client({
       region: region,
