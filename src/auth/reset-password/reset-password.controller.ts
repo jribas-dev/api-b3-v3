@@ -15,11 +15,8 @@ export class ResetPasswordController {
 
   @Post()
   @HttpCode(HttpStatus.OK)
-  async passwordReset(@Body() body: { email: string; frontUrl: string }) {
-    await this.resetPasswordService.requestPasswordReset(
-      body.email,
-      body.frontUrl,
-    );
+  async passwordReset(@Body() body: { email: string }) {
+    await this.resetPasswordService.requestPasswordReset(body.email);
   }
 
   @Get('check')

@@ -7,6 +7,7 @@ import { AwsSenderService } from 'src/infra/aws-ses/sender/sender.service';
 import { TemplateType } from 'src/infra/aws-ses/sender/enums/template-type.enum';
 import { randomBytes } from 'crypto';
 import { PasswordService } from '../password/password.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ResetPasswordService {
@@ -17,9 +18,10 @@ export class ResetPasswordService {
     private readonly resetRepo: Repository<ResetPasswordEntity>,
     private readonly emailService: AwsSenderService,
     private readonly passwordService: PasswordService,
+    private readonly configService: ConfigService,
   ) {}
 
-  async requestPasswordReset(email: string, frontUrl: string) {
+  async requestPasswordReset(email: string) {
     const user = await this.userRepo.findOne({
       where: { email },
     });
@@ -32,7 +34,8 @@ export class ResetPasswordService {
     const newReset = this.resetRepo.create({ user, token, expiresAt });
     await this.resetRepo.save(newReset);
 
-    const resetLink = `${frontUrl}?token=${token}?email=${user.email}`;
+    const frontUrl = this.configService.get<string>('FRONTEND_URL');
+    const resetLink = `${frontUrl}/user/password-reset/?token=${token}?email=${user.email}`;
 
     await this.emailService.sendTemplateEmail(
       user.email,

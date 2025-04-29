@@ -117,7 +117,7 @@ export class AuthService {
     };
   }
 
-  async refresh(oldToken: string, req: Request) {
+  async refresh(oldToken: string) {
     const tokenData = await this.refreshTokenService.validate(oldToken);
 
     if (!tokenData) {
@@ -146,7 +146,6 @@ export class AuthService {
     );
 
     await this.refreshTokenService.revoke(oldToken);
-    await this.logout(req);
 
     return {
       accessToken: newAccessToken,

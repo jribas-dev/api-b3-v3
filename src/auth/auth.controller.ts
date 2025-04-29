@@ -63,10 +63,10 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @UseGuards(JwtGuard, UserInstanceGuard)
+  // @UseGuards(JwtGuard, UserInstanceGuard)
   @HttpCode(HttpStatus.OK)
-  async refresh(@Req() req: Request, @Body() body: { refreshToken: string }) {
-    return this.authService.refresh(body.refreshToken, req);
+  async refresh(@Body() body: { refreshToken: string }) {
+    return this.authService.refresh(body.refreshToken);
   }
 
   @Post('logout')

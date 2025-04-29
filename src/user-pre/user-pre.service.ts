@@ -17,6 +17,7 @@ import { TemplateType } from 'src/infra/aws-ses/sender/enums/template-type.enum'
 import { ResponseUserDto } from 'src/user/dto/response-user.dto';
 import { plainToInstance } from 'class-transformer';
 import { UserInstanceService } from 'src/user-instance/user-instance.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UserPreService {
@@ -28,6 +29,7 @@ export class UserPreService {
     private readonly userService: UserService,
     private readonly userInstanceService: UserInstanceService,
     private readonly senderService: AwsSenderService,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(data: CreateUserPreDto): Promise<UserPreEntity> {
@@ -61,8 +63,8 @@ export class UserPreService {
       await this.userPreInstanceRepo.save(userPreInstance);
     }
     // Send email with the token
-    const hostlink = 'http://localhost:3000/user-pre/check';
-    const newUserLink = `${hostlink}?token=${userPre.token}&email=${data.email}`;
+    const frontUrl = this.configService.get<string>('FRONTEND_URL');
+    const newUserLink = `${frontUrl}/user-pre/confirm/?token=${userPre.token}&email=${data.email}`;
 
     await this.senderService.sendTemplateEmail(
       data.email,
