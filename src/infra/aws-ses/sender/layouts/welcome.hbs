@@ -1,53 +1,193 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bem-vindo</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #6a0dad; /* Roxo */
-      font-family: Arial, sans-serif;
-    }
-    .container {
-      margin: 40px;
-      background-color: rgb(204, 204, 204);
-      border-radius: 8px;
-    }
-    .content {
-      padding: 30px;
-      font-family: Arial, sans-serif;
-      color: #333;
-      line-height: 1.5;
-    }
-    .footer {
-      text-align: center;
-      font-size: 12px;
-      color: #777;
-      padding: 10px 0;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Confirmação Registro de Conta</title>
+    <!--[if mso]>
+    <style type="text/css">
+        table {border-collapse: collapse;}
+        table, td {mso-table-lspace: 0pt; mso-table-rspace: 0pt;}
+        img {-ms-interpolation-mode: bicubic;}
+    </style>
+    <![endif]-->
+    <style type="text/css">
+        /* Reset Styles */
+        body, #bodyTable, #bodyCell {
+            height: 100% !important;
+            margin: 0;
+            padding: 0;
+            width: 100% !important;
+        }
+        
+        /* Ensure Webkit and Windows rendering */
+        body {
+            -webkit-font-smoothing: antialiased;
+            -ms-text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
+        }
+        
+        /* Ensure uniform rendering across email clients */
+        img {
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+            -ms-interpolation-mode: bicubic;
+        }
+        
+        /* Fix for Outlook and others */
+        table, td {
+            border-collapse: collapse;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        
+        /* Basic Styles */
+        body, table, td, p, a, li, blockquote {
+            -ms-text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+        }
+        
+        /* Mobile Styles */
+        @media screen and (max-width: 600px) {
+            .container {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            
+            .responsive-table {
+                width: 100% !important;
+            }
+            
+            .padding {
+                padding: 20px 5% !important;
+            }
+            
+            .section-padding {
+                padding: 30px 15px !important;
+            }
+            
+            .mobile-button {
+                width: 100% !important;
+                text-align: center !important;
+                padding: 15px !important;
+            }
+        }
+    </style>
 </head>
-<body>
-  <div class="container">
-    <div class="content">
-      <h1>Olá, {{ name }}!</h1>
-      <p>Seja muito bem-vindo(a) à nossa comunidade! 🎉</p>
-      <p>Estamos super felizes em ter você por aqui. Agora você faz parte de um grupo incrível de pessoas que, assim como você, acreditam no poder da colaboração e do compartilhamento de conhecimento.</p>
-      <p>O que você pode fazer agora:</p>
-      <ul>
-        <li>Explorar nossas ferramentas</li>
-        <li>Personalizar seu perfil e preferências</li>
-        <li>Interagir com outros membros</li>
-      </ul>
-      <p>Se tiver qualquer dúvida, estamos aqui para ajudar!</p>
-      <p>Um abraço,<br />Equipe B3Erp</p>
-    </div>
-  </div>
-  <div class="footer">
-    © {{ year }} B3Erp. Todos os direitos reservados.
-  </div>
+
+<body style="margin: 0 !important; padding: 0 !important; background-color: #f8f9fa;">
+    <!-- Main Table Structure -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8f9fa;" role="presentation">
+        <tr>
+            <td align="center" valign="top" style="padding: 40px 10px;">
+                <!-- Email Container -->
+                <table border="0" cellpadding="0" cellspacing="0" class="container" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);" role="presentation">
+                    <!-- Header Section -->
+                    <tr>
+                        <td align="center" valign="top" style="padding: 35px 15px; background-color: #3385ff; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+                            <img src="https://b3erp-static.s3.sa-east-1.amazonaws.com/logoB3Erp.png" alt="B3Erp Logo" style="display: block; border: 0; max-width: 100%;" width="172" height="60">
+                        </td>
+                    </tr>
+                    
+                    <!-- Content Section -->
+                    <tr>
+                        <td align="left" valign="top" class="padding" style="padding: 40px 30px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
+                                <tr>
+                                    <td style="padding-bottom: 20px; font-size: 28px; line-height: 36px; color: #333333; font-weight: bold; text-align: center;">
+                                        Confirmação Registro de Conta
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 20px; font-size: 16px; line-height: 24px; color: #666666;">
+                                        Olá, {{ name }}!
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 20px; font-size: 16px; line-height: 24px; color: #666666;">
+                                        Seja muito bem-vindo(a) à nossa comunidade! 🎉
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 20px; font-size: 16px; line-height: 24px; color: #666666;">
+                                        Estamos super felizes em ter você por aqui. Agora você faz parte de um grupo incrível de pessoas que, assim como você, acreditam no poder da colaboração e do compartilhamento de conhecimento.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 10px; font-size: 16px; line-height: 24px; color: #666666;">
+                                        O que você pode fazer agora:
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-left: 15px; padding-bottom: 20px;">
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
+                                            <tr>
+                                                <td style="font-size: 16px; line-height: 24px; color: #666666; padding-bottom: 8px;">
+                                                    • Explorar as melhores ferramentas de gestão
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 16px; line-height: 24px; color: #666666; padding-bottom: 8px;">
+                                                    • Personalizar seu perfil e preferências
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-size: 16px; line-height: 24px; color: #666666; padding-bottom: 8px;">
+                                                    • Ter controle gerencial e estratégico da sua empresa
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding: 30px 0;">
+                                        <!-- Button : BEGIN -->
+                                        <table border="0" cellpadding="0" cellspacing="0" role="presentation">
+                                            <tr>
+                                                <td align="center" style="border-radius: 50px;" bgcolor="#4361ee">
+                                                    <a href="https://app.b3erp.com.br" target="_blank" style="font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; padding: 15px 30px; border-radius: 50px; border: 1px solid #4361ee; display: inline-block; font-weight: bold;">ACESSAR MINHA CONTA</a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <!-- Button : END -->
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 20px; font-size: 16px; line-height: 24px; color: #666666;">
+                                        Se tiver qualquer dúvida, estamos aqui para ajudar!
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 16px; line-height: 24px; color: #666666;">
+                                        Um abraço,<br>
+                                        Equipe B3Erp
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer Section -->
+                    <tr>
+                        <td align="center" valign="top" style="padding: 30px; background-color: #f2f4f8; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; color: #666666; font-size: 12px; line-height: 18px;">
+                            <p style="margin: 0 0 10px 0;">© {{ year }} B3Erp Sistema de Gestão. Todos os direitos reservados.</p>
+                            <p style="margin: 0 0 10px 0;">
+                                <a href="https://b3erp.com.br/policy.html" target="_blank" style="color: #4361ee; text-decoration: none;">Política de Privacidade</a> | 
+                                <a href="https://b3erp.com.br/terms.html" target="_blank" style="color: #4361ee; text-decoration: none;">Termos de Uso</a>
+                            </p>
+                            <p style="margin: 0;">
+                                Este é um email automático. Por favor, não responda.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
