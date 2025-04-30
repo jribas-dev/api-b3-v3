@@ -10,12 +10,14 @@ import { AppService } from './app.service';
 import { InfraModule } from './infra/infra.module';
 import { B3vendasModule } from './b3vendas/b3vendas.module';
 import { UserPreModule } from './user-pre/user-pre.module';
+import { configSchemaValidation } from './config.schema';
 
 @Module({
   imports: [
     // Habilita leitura de variáveis do .env
     ConfigModule.forRoot({
       isGlobal: true, // Disponível em toda a aplicação
+      validationSchema: configSchemaValidation,
     }),
 
     // Conexão com banco principal (main_db)
