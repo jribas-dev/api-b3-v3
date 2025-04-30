@@ -1,7 +1,3 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ConfigService } from '@nestjs/config';
-import { ValidationPipe } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -10,6 +6,9 @@ import * as path from 'path';
 // dotenv.config({
 //   path: `.env.${process.env.NODE_ENV || 'development'}`,
 // });
+// for (const key in process.env) {
+//   console.log(`${key}: ${process.env[key]}`);
+// }
 
 const envFileName = `.env.${process.env.NODE_ENV || 'development'}`;
 const envFilePath = path.resolve(process.cwd(), envFileName);
@@ -30,9 +29,11 @@ if (fs.existsSync(envFilePath)) {
     `Arquivo ${envFileName} não encontrado. Usando variáveis de ambiente do sistema.`,
   );
 }
-for (const key in process.env) {
-  console.log(`${key}: ${process.env[key]}`);
-}
+
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
