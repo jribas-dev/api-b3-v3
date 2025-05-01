@@ -40,7 +40,7 @@ cp -r "$REPO_DIR/package-lock.json" "$DEPLOY_DIR"
 
 # Inicia a aplicação no PM2
 echo "Iniciando a aplicação no PM2..."
-# pm2 restart "$APP_NAME" || { echo "Falha ao iniciar a aplicação no PM2."; exit 1; }
+pm2 restart "$APP_NAME" || { echo "Falha ao iniciar a aplicação no PM2."; exit 1; }
 
 echo "Deploy concluído com sucesso!"
 
