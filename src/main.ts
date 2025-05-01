@@ -1,35 +1,3 @@
-import * as dotenv from 'dotenv';
-import * as fs from 'fs';
-import * as path from 'path';
-
-// Carrega o arquivo .env apropriado com base no NODE_ENV
-// dotenv.config({
-//   path: `.env.${process.env.NODE_ENV || 'development'}`,
-// });
-// for (const key in process.env) {
-//   console.log(`${key}: ${process.env[key]}`);
-// }
-
-const envFileName = `.env.${process.env.NODE_ENV || 'development'}`;
-const envFilePath = path.resolve(process.cwd(), envFileName);
-
-// Verifica se o arquivo existe antes de carregar
-if (fs.existsSync(envFilePath)) {
-  console.log(`Carregando variáveis de ambiente de: ${envFilePath}`);
-  const result = dotenv.config({ path: envFilePath });
-
-  if (result.error) {
-    console.error(`Erro ao carregar ${envFileName}:`, result.error);
-    throw new Error(`Falha ao carregar arquivo de ambiente ${envFileName}`);
-  } else {
-    console.log(`Arquivo ${envFileName} carregado com sucesso.`);
-  }
-} else {
-  console.warn(
-    `Arquivo ${envFileName} não encontrado. Usando variáveis de ambiente do sistema.`,
-  );
-}
-
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
