@@ -3,7 +3,7 @@
 # Configurações
 REPO_DIR="."                  # Caminho para o diretório do repositório
 APP_NAME="api.b3erp.com.br"   # Nome da aplicação no PM2
-DEPLOY_DIR="../nodepapp"      # Caminho para o diretório de deploy
+DEPLOY_DIR="/home/b3erp/web/api.b3erp.com.br/private/nodepapp"      # Caminho para o diretório de deploy
 
 # Navega até o diretório do repositório
 cd "$REPO_DIR" || { echo "Diretório $REPO_DIR não encontrado."; exit 1; }
@@ -31,10 +31,10 @@ rm -rf "$DEPLOY_DIR/dist" "$DEPLOY_DIR/node_modules" \
 
 # Copia os novos arquivos e pastas para o diretório de deploy
 echo "Copiando arquivos atualizados para o diretório de deploy..."
-cp -r "$REPO_DIR/dist" "$REPO_DIR/node_modules" "$REPO_DIR/package.json" "$REPO_DIR/package-lock.json" "$DEPLOY_DIR/"
+cp -r "$REPO_DIR/dist" "$REPO_DIR/node_modules" "$REPO_DIR/package.json" "$REPO_DIR/package-lock.json" "$DEPLOY_DIR"
 
 # Inicia a aplicação no PM2
 echo "Iniciando a aplicação no PM2..."
-pm2 restart "$APP_NAME" || echo { echo "Falha ao iniciar a aplicação no PM2."; exit 1; }
+pm2 restart "$APP_NAME" || { echo "Falha ao iniciar a aplicação no PM2."; exit 1; }
 
 echo "Deploy concluído com sucesso!"
