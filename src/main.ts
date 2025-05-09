@@ -8,6 +8,7 @@ async function bootstrap() {
   const config = app.get(ConfigService);
   const port = config.get<number>('APP_PORT') || 3000;
   const appName = config.get<string>('APP_NAME') as string;
+  // const enviroment = config.get<string>('NODE_ENV') as string;
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -16,6 +17,16 @@ async function bootstrap() {
       transform: true, // transforma os payloads nos DTOs
     }),
   );
+
+  // Configura o CORS para permitir requisições de qualquer origem
+  // const origin =
+  //   enviroment === 'production' ? config.get<string>('FRONTEND_URL') : '*';
+
+  // app.enableCors({
+  //   origin: origin,
+  //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  //   preflightContinue: false,
+  // });
 
   await app.listen(port);
   console.log(

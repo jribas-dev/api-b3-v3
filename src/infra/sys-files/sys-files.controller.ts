@@ -62,10 +62,7 @@ export class SysFilesController {
 
   @UseGuards(RootGuard)
   @Get('system/:id/bydays/:days')
-  async findByDays(
-    @Param('days') idSystem: string,
-    @Param('days') days: string,
-  ) {
+  async findByDays(@Param('id') idSystem: string, @Param('days') days: string) {
     return await this.sysFilesService.findByDays(+idSystem, +days);
   }
 
