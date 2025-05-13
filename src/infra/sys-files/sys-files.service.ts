@@ -48,7 +48,9 @@ export class SysFilesService {
   async findAll(): Promise<ResponseSysFileDto[]> {
     const sysFiles = await this.sysFilesRepo.find();
     if (!sysFiles.length) throw new NotFoundException('No SysFiles found');
-    return sysFiles.map((sysFile) => plainToInstance(ResponseSysFileDto, sysFile));
+    return sysFiles.map((sysFile) =>
+      plainToInstance(ResponseSysFileDto, sysFile),
+    );
   }
 
   async findOneById(id: number): Promise<ResponseSysFileDto> {
@@ -137,6 +139,9 @@ export class SysFilesService {
     const sysFile = await this.findOneById(id);
     Object.assign(sysFile, updates);
     await this.sysFilesRepo.save(sysFile);
+    if (sysFile.dthrFile && !(sysFile.dthrFile instanceof Date)) {
+      sysFile.dthrFile = new Date(sysFile.dthrFile);
+    }
     return plainToInstance(ResponseSysFileDto, sysFile);
   }
 
