@@ -14,10 +14,10 @@ export class ResponseUserInstanceDto {
   dbId: string;
 
   @Expose()
-  roleBack: RoleBack;
+  roleback: RoleBack;
 
   @Expose()
-  roleFront: RoleFront;
+  rolefront: RoleFront;
 
   @Expose()
   isActive: boolean;
