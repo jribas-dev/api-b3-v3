@@ -28,6 +28,7 @@ export class UserInstanceService {
   async findOne(id: number): Promise<ResponseUserInstanceDto> {
     const found = await this.userInstanceRepo.findOne({
       where: { id },
+      relations: ['user', 'instance'],
     });
     if (!found) throw new NotFoundException('User instance not found');
     return plainToInstance(ResponseUserInstanceDto, found);
@@ -44,7 +45,7 @@ export class UserInstanceService {
 
   async findByUser(userId: string): Promise<ResponseUserInstanceDto[]> {
     const userInstances = await this.userInstanceRepo.find({
-      where: { userId, isActive: true },
+      where: { userId },
       relations: ['instance'],
     });
     if (!userInstances || userInstances.length === 0) {
@@ -57,7 +58,7 @@ export class UserInstanceService {
 
   async findByDb(dbId: string): Promise<ResponseUserInstanceDto[]> {
     const usersInstance = await this.userInstanceRepo.find({
-      where: { dbId, isActive: true },
+      where: { dbId },
       relations: ['user'],
     });
     if (!usersInstance || usersInstance.length === 0) {

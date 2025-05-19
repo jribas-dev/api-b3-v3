@@ -1,6 +1,6 @@
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform } from 'class-transformer';
 import { RoleBack, RoleFront } from '../enums/user-instance-roles.enum';
-import { RelationInstanceDto } from './relation-instance.dto';
+import { UserInstanceEntity } from '../entities/user-instance.entity';
 
 @Exclude()
 export class ResponseUserInstanceDto {
@@ -23,6 +23,22 @@ export class ResponseUserInstanceDto {
   isActive: boolean;
 
   @Expose()
-  @Type(() => RelationInstanceDto)
-  instance: RelationInstanceDto;
+  @Transform(
+    ({ obj }: { obj: UserInstanceEntity }): string => obj.instance?.name ?? '',
+  )
+  instanceName: string;
+
+  @Expose()
+  @Transform(
+    ({ obj }: { obj: UserInstanceEntity }): string =>
+      obj.instance?.dbName ?? '',
+  )
+  instanceDbName: string;
+
+  @Expose()
+  @Transform(
+    ({ obj }: { obj: UserInstanceEntity }): string =>
+      obj.instance?.dbHost ?? '',
+  )
+  instanceDbHost: string;
 }
