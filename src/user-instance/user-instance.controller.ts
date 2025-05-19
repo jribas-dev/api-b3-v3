@@ -37,7 +37,7 @@ export class UserInstanceController {
     @Request() req: { user: { isRoot: boolean; userId: string } },
   ) {
     const user = req.user;
-    if (user.userId !== userId) {
+    if (user.userId !== userId || !user.isRoot) {
       throw new ForbiddenException(
         'Você não tem permissão para acessar este recurso',
       );

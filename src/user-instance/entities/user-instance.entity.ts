@@ -37,12 +37,16 @@ export class UserInstanceEntity {
   @Column({ default: true })
   isActive: boolean;
 
-  @ManyToOne(() => UserEntity, (user) => user.instances, { eager: true })
+  @ManyToOne(() => UserEntity, (user) => user.instances, {
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'userId' })
   user: UserEntity;
 
   @ManyToOne(() => InstanceEntity, (instance) => instance.users, {
     eager: true,
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'dbId' })
   instance: InstanceEntity;

@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { RolesBack } from 'src/auth/decorators/roles-back.decorator';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
-import { RolesBackGuard } from 'src/auth/guards/roles-back.guard';
+import { AllowRoot, RolesBackGuard } from 'src/auth/guards/roles-back.guard';
 import { RoleBack } from 'src/user-instance/enums/user-instance-roles.enum';
 import { UserPreService } from './user-pre.service';
 import { CreateUserPreDto } from './dto/create-user-pre.dto';
@@ -23,6 +23,7 @@ export class UserPreController {
 
   @UseGuards(JwtGuard, RolesBackGuard)
   @RolesBack(RoleBack.ADMIN, RoleBack.SUPER)
+  @AllowRoot()
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() data: CreateUserPreDto) {
