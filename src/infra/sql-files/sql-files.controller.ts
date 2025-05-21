@@ -11,7 +11,6 @@ import {
   UploadedFile,
   ParseFilePipe,
   MaxFileSizeValidator,
-  FileTypeValidator,
 } from '@nestjs/common';
 import { SqlFilesService } from './sql-files.service';
 import { CreateSqlFileDto } from './dto/create-sql-file.dto';
@@ -36,9 +35,6 @@ export class SqlFilesController {
         validators: [
           new MaxFileSizeValidator({
             maxSize: 1024 * 1024 * 10, // 10MB
-          }),
-          new FileTypeValidator({
-            fileType: '.(sql|txt)',
           }),
         ],
       }),
