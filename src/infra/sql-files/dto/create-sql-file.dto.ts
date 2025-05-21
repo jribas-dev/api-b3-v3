@@ -1,10 +1,4 @@
-import {
-  IsBase64,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { SqlFilesEntity } from '../entities/sql-file.entity';
 import { OmitType } from '@nestjs/mapped-types';
 import { SqlFilesTipo } from '../enums/sql-files-tipo.enum';
@@ -28,9 +22,4 @@ export class CreateSqlFileDto extends OmitType(SqlFilesEntity, [
   @IsOptional()
   @IsString()
   obs: string | null;
-
-  @IsString()
-  @IsNotEmpty()
-  @IsBase64()
-  sqlData: string;
 }

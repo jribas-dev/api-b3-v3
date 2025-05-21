@@ -7,6 +7,11 @@ import {
   Param,
   Delete,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
 import { SqlFilesService } from './sql-files.service';
 import { CreateSqlFileDto } from './dto/create-sql-file.dto';
@@ -14,6 +19,7 @@ import { UpdateSqlFileDto } from './dto/update-sql-file.dto';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RootGuard } from 'src/auth/guards/root.guard';
 import { DownloadSqlFileDto } from './dto/download-sql-file';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @UseGuards(JwtGuard)
 @Controller('sql-files')
@@ -22,8 +28,24 @@ export class SqlFilesController {
 
   @UseGuards(RootGuard)
   @Post()
-  async create(@Body() createSqlFileDto: CreateSqlFileDto) {
-    createSqlFileDto.script = Buffer.from(createSqlFileDto.sqlData, 'base64');
+  @UseInterceptors(FileInterceptor('sqlFile'))
+  async create(
+    @Body() createSqlFileDto: CreateSqlFileDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: 1024 * 1024 * 10, // 10MB
+          }),
+          new FileTypeValidator({
+            fileType: /\.(sql|txt)$/,
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    createSqlFileDto.script = file.buffer;
     return await this.sqlFilesService.create(createSqlFileDto);
   }
 
@@ -35,10 +57,7 @@ export class SqlFilesController {
 
   @UseGuards(RootGuard)
   @Get('system/:id/bydays/:days')
-  async findByDays(
-    @Param('days') idSystem: string,
-    @Param('days') days: string,
-  ) {
+  async findByDays(@Param('id') idSystem: string, @Param('days') days: string) {
     return await this.sqlFilesService.findByDays(+idSystem, +days);
   }
 

@@ -31,7 +31,9 @@ export class SqlFilesService {
     if (!sqlFiles.length) {
       throw new NotFoundException('No SQL files found');
     }
-    return sqlFiles.map((sqlFile) => plainToInstance(ResponseSqlFileDto, sqlFile));
+    return sqlFiles.map((sqlFile) =>
+      plainToInstance(ResponseSqlFileDto, sqlFile),
+    );
   }
 
   async findOneById(idSql: number): Promise<ResponseSqlFileDto> {
@@ -43,23 +45,25 @@ export class SqlFilesService {
   }
 
   async findByDays(
-    idsystem: number,
+    idSystem: number,
     days: number,
   ): Promise<ResponseSqlFileDto[]> {
     const date = new Date(Date.now());
     date.setDate(date.getDate() - days);
     const sqlFiles = await this.sqlFilesRepo.find({
       where: {
-        idSystem: +idsystem,
+        idSystem,
         dthrSql: MoreThanOrEqual(date),
       },
     });
     if (!sqlFiles.length) {
       throw new NotFoundException(
-        `No SQL files found for system ${idsystem} in the last ${days} days`,
+        `No SQL files found for system ${idSystem} in the last ${days} days`,
       );
     }
-    return sqlFiles.map((sqlFile) => plainToInstance(ResponseSqlFileDto, sqlFile));
+    return sqlFiles.map((sqlFile) =>
+      plainToInstance(ResponseSqlFileDto, sqlFile),
+    );
   }
 
   async getReleasesFrom(
@@ -82,7 +86,9 @@ export class SqlFilesService {
         `No SQL files found for system ${systemId} with version greater than or equal to ${fromVersion}`,
       );
     }
-    return sqlFiles.map((sqlFile) => plainToInstance(ResponseSqlFileDto, sqlFile));
+    return sqlFiles.map((sqlFile) =>
+      plainToInstance(ResponseSqlFileDto, sqlFile),
+    );
   }
 
   async getMaxVersionByType(
