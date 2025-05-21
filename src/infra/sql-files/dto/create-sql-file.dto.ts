@@ -1,22 +1,25 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { SqlFilesEntity } from '../entities/sql-file.entity';
 import { OmitType } from '@nestjs/mapped-types';
 import { SqlFilesTipo } from '../enums/sql-files-tipo.enum';
+import { Transform } from 'class-transformer';
 
 export class CreateSqlFileDto extends OmitType(SqlFilesEntity, [
   'idSql',
   'dthrSql',
 ]) {
-  @IsOptional()
-  @IsNumber()
+  @IsString()
+  @IsNotEmpty()
+  @Transform(({ value }) => Number(value))
   idSystem: number | null;
 
   @IsString()
   @IsNotEmpty()
   tipo: SqlFilesTipo;
 
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
+  @Transform(({ value }) => Number(value))
   versaoDb: number;
 
   @IsOptional()
