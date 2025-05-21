@@ -38,7 +38,7 @@ export class SqlFilesController {
             maxSize: 1024 * 1024 * 10, // 10MB
           }),
           new FileTypeValidator({
-            fileType: /^(text|application)\/(sql|x-sql)$/i,
+            fileType: '.(sql|txt)',
           }),
         ],
       }),
