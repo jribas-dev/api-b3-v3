@@ -78,4 +78,14 @@ export class UserInstanceService {
     const saved = await this.userInstanceRepo.save(relation);
     return plainToInstance(ResponseUserInstanceDto, saved);
   }
+
+  async delete(id: number): Promise<void> {
+    const relation = await this.userInstanceRepo.findOne({
+      where: { id },
+    });
+    if (!relation) {
+      throw new NotFoundException('User instance not found');
+    }
+    await this.userInstanceRepo.remove(relation);
+  }
 }

@@ -12,6 +12,7 @@ import {
   Request,
   NotFoundException,
   ForbiddenException,
+  Delete,
 } from '@nestjs/common';
 import { UserInstanceService } from './user-instance.service';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
@@ -75,5 +76,12 @@ export class UserInstanceController {
     @Body() updates: UpdateUserInstanceDto,
   ) {
     return this.userInstanceService.update(id, updates);
+  }
+
+  @UseGuards(RootGuard)
+  @Delete(':id')
+  async delete(@Param('id', ParseIntPipe) id: number) {
+    await this.userInstanceService.delete(id);
+    return { message: 'Usuário X Instância deletada com sucesso' };
   }
 }

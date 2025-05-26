@@ -11,6 +11,7 @@ import {
   HttpStatus,
   Request,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -82,5 +83,12 @@ export class UserController {
       throw new ForbiddenException('Você só pode editar seus próprios dados');
     }
     return await this.userService.update(id, updateData);
+  }
+
+  @UseGuards(RootGuard)
+  @Delete(':id')
+  async delete(@Param('id') id: string) {
+    await this.userService.delete(id);
+    return { message: 'Usuário deletado com sucesso' };
   }
 }

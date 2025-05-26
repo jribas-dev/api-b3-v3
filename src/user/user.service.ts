@@ -75,9 +75,29 @@ export class UserService {
     userId: string,
     updates: Partial<UpdateUserDto>,
   ): Promise<ResponseUserDto> {
+    const emailExists = await this.findOneByEmail(updates.email);
+    if (emailExists && emailExists.userId !== userId) {
+      throw new NotFoundException('Email já cadastrado');
+    }
     const user = await this.findOneById(userId);
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+    if (updates.password) {
+      updates.password = await this.passwordService.hashPassword(
+        updates.password,
+      );
+    }
     Object.assign(user, updates);
     const updatedUser = await this.userRepo.save(user);
     return plainToInstance(ResponseUserDto, updatedUser);
+  }
+
+  async delete(userId: string): Promise<void> {
+    const user = await this.findOneById(userId);
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+    await this.userRepo.delete(userId);
   }
 }
