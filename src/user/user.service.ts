@@ -75,10 +75,6 @@ export class UserService {
     userId: string,
     updates: Partial<UpdateUserDto>,
   ): Promise<ResponseUserDto> {
-    const emailExists = await this.findOneByEmail(updates.email);
-    if (emailExists && emailExists.userId !== userId) {
-      throw new NotFoundException('Email já cadastrado');
-    }
     const user = await this.findOneById(userId);
     if (!user) {
       throw new NotFoundException('Usuário não encontrado');
