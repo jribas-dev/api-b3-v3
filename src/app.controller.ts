@@ -42,6 +42,8 @@ export class AppController {
         isRoot: boolean;
         dbId: string | undefined;
         instanceName: string | undefined;
+        roleBack: string | undefined;
+        roleFront: string | undefined;
       };
     },
   ) {
