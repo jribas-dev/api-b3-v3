@@ -9,12 +9,14 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PasswordService } from 'src/auth/password/password.service';
 import { TemplateType } from 'src/infra/aws-ses/sender/enums/template-type.enum';
 import { AwsSenderService } from 'src/infra/aws-ses/sender/sender.service';
+import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
+    private readonly userInstanceRepo: Repository<UserInstanceEntity>,
     private readonly passwordService: PasswordService,
     private readonly senderService: AwsSenderService,
   ) {}
@@ -86,6 +88,13 @@ export class UserService {
     }
     Object.assign(user, updates);
     const updatedUser = await this.userRepo.save(user);
+    // Se o usuario foi alterado para inativo, fazer inativação de todas as instâncias associadas
+    if (updatedUser.isActive === false) {
+      await this.userInstanceRepo.update(
+        { userId: updatedUser.userId },
+        { isActive: false },
+      );
+    }
     return plainToInstance(ResponseUserDto, updatedUser);
   }
 

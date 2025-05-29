@@ -42,7 +42,6 @@ export class InstanceController {
   @UseGuards(RootGuard)
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updates: UpdateInstanceDto) {
-    const updated = await this.InstanceService.update(id, updates);
-    return updated;
+    return await this.InstanceService.update(id, updates);
   }
 }

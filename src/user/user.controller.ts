@@ -6,7 +6,6 @@ import {
   Param,
   Body,
   HttpCode,
-  NotFoundException,
   ForbiddenException,
   HttpStatus,
   Request,
@@ -51,11 +50,7 @@ export class UserController {
   @UseGuards(RootGuard)
   @Get()
   async findAll() {
-    const users = await this.userService.findAll();
-    if (!users || users.length === 0) {
-      throw new NotFoundException('Nenhum usuário encontrado');
-    }
-    return users;
+    return await this.userService.findAll();
   }
 
   @Get(':id')
@@ -65,11 +60,7 @@ export class UserController {
 
   @Get('get/me')
   async findMe(@Request() req: { user: { isRoot: boolean; userId: string } }) {
-    const user = await this.userService.findOneById(req.user.userId);
-    if (!user) {
-      throw new NotFoundException('Usuário pra lá de bagdá');
-    }
-    return user;
+    return await this.userService.findOneById(req.user.userId);
   }
 
   @Patch(':id')
