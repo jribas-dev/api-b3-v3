@@ -14,6 +14,7 @@ export class InstanceService {
   constructor(
     @InjectRepository(InstanceEntity)
     private readonly instanceRepo: Repository<InstanceEntity>,
+    @InjectRepository(UserInstanceEntity)
     private readonly userInstanceRepo: Repository<UserInstanceEntity>,
   ) {}
 

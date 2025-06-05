@@ -16,6 +16,7 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
+    @InjectRepository(UserInstanceEntity)
     private readonly userInstanceRepo: Repository<UserInstanceEntity>,
     private readonly passwordService: PasswordService,
     private readonly senderService: AwsSenderService,
