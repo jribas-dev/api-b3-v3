@@ -35,19 +35,12 @@ import { configSchemaValidation } from './config.schema';
         synchronize: true, // cuidado: use false em produção!
       }),
     }),
-
     UserModule,
-
     InstanceModule,
-
     UserInstanceModule,
-
     AuthModule,
-
     InfraModule,
-
     UserPreModule,
-
     B3vendasModule,
   ],
   controllers: [AppController],

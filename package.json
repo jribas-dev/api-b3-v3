@@ -1,6 +1,6 @@
 {
   "name": "api-b3-v3",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "description": "API REST + Auth Server (JWT / TypeORM / MySQL / NestJS)",
   "author": "3B3 Sistemas e Consultoria",
   "private": true,
