@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ResetPasswordService } from './reset-password.service';
 
-@Controller('reset-password')
+@Controller('auth/reset-password')
 export class ResetPasswordController {
   constructor(private readonly resetPasswordService: ResetPasswordService) {}
 

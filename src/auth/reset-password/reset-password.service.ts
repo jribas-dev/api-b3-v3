@@ -35,7 +35,7 @@ export class ResetPasswordService {
     await this.resetRepo.save(newReset);
 
     const frontUrl = this.configService.get<string>('FRONTEND_URL');
-    const resetLink = `${frontUrl}/user/password-reset/?token=${token}?email=${user.email}`;
+    const resetLink = `${frontUrl}/auth/reset-password/?token=${token}&email=${user.email}`;
 
     await this.emailService.sendTemplateEmail(
       user.email,
