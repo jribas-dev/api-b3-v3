@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -16,6 +17,7 @@ export class ResetPasswordEntity {
   token: string;
 
   @ManyToOne(() => UserEntity, { eager: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
   user: UserEntity;
 
   @Column()

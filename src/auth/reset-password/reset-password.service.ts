@@ -59,9 +59,8 @@ export class ResetPasswordService {
     if (!user) throw new NotFoundException('User not found');
     if (!user.isActive)
       throw new NotFoundException('Invalid user, call support');
-
     const resetEntity = await this.resetRepo.findOne({
-      where: { token, user },
+      where: { token, user: { userId: user.userId } },
     });
     if (!resetEntity) throw new NotFoundException('Token not found');
     if (resetEntity.expiresAt < new Date())
