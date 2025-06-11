@@ -54,10 +54,11 @@ export class UserPreService {
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 12), // 12 hours
     });
     const newUserPre = await this.userPreRepo.save(userPre);
-    for (const { dbId, roleBack, roleFront } of data.dblist) {
+    for (const { dbId, idBackendUser, roleBack, roleFront } of data.dblist) {
       const userPreInstance = this.userPreInstanceRepo.create();
       userPreInstance.userPreId = newUserPre.userPreId;
       userPreInstance.dbId = dbId;
+      userPreInstance.idBackendUser = idBackendUser;
       userPreInstance.roleback = roleBack;
       userPreInstance.rolefront = roleFront;
       await this.userPreInstanceRepo.save(userPreInstance);
@@ -106,6 +107,7 @@ export class UserPreService {
       await this.userInstanceService.addUserInstance({
         userId: user.userId,
         dbId: userPreInstance.dbId,
+        idBackendUser: userPreInstance.idBackendUser,
         roleback: userPreInstance.roleback,
         rolefront: userPreInstance.rolefront,
         isActive: true,

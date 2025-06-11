@@ -23,6 +23,9 @@ export class UserPreInstanceEntity {
   @Column()
   dbId: string;
 
+  @Column({ type: 'int', nullable: true })
+  idBackendUser: number | null;
+
   @Column({
     type: 'enum',
     enum: RoleBack,

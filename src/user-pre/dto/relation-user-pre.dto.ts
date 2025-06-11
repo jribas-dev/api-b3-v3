@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import {
   RoleBack,
   RoleFront,
@@ -8,6 +8,10 @@ export class RelationUserPreDto {
   @IsNotEmpty()
   @IsString()
   dbId: string;
+
+  @IsNumber()
+  @IsOptional()
+  idBackendUser: number | null;
 
   @IsNotEmpty()
   roleBack: RoleBack;
