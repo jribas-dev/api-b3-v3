@@ -14,6 +14,9 @@ export class ResponseUserInstanceDto {
   dbId: string;
 
   @Expose()
+  idBackendUser: number | null;
+
+  @Expose()
   roleback: RoleBack;
 
   @Expose()

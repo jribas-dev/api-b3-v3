@@ -58,7 +58,7 @@ export class UserPreService {
       const userPreInstance = this.userPreInstanceRepo.create();
       userPreInstance.userPreId = newUserPre.userPreId;
       userPreInstance.dbId = dbId;
-      userPreInstance.idBackendUser = idBackendUser;
+      userPreInstance.idBackendUser = idBackendUser || null;
       userPreInstance.roleback = roleBack;
       userPreInstance.rolefront = roleFront;
       await this.userPreInstanceRepo.save(userPreInstance);

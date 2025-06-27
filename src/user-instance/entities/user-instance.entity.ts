@@ -20,7 +20,7 @@ export class UserInstanceEntity {
   @Column()
   dbId: string;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'int', nullable: true, default: null })
   idBackendUser: number | null;
 
   @Column({
