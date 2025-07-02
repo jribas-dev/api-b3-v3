@@ -47,6 +47,7 @@ export class UserInstanceService {
     const userInstances = await this.userInstanceRepo.find({
       where: { userId },
       relations: ['instance'],
+      order: { instance: { name: 'ASC' } },
     });
     if (!userInstances || userInstances.length === 0) {
       throw new NotFoundException('No user instances found');
