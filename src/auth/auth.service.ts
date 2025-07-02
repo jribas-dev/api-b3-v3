@@ -148,6 +148,7 @@ export class AuthService {
     await this.refreshTokenService.revoke(oldToken);
 
     return {
+      isActive: user.isActive,
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
       tokenType: 'Bearer',
