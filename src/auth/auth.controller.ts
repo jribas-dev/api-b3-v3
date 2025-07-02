@@ -36,13 +36,8 @@ export class AuthController {
       req,
     );
 
-    if (validUser) {
-      if (validUser.isActive) {
-        const tokenResponse = await this.authService.login(validUser);
-        return { isActive: true, ...tokenResponse };
-      }
-      return { isActive: false, message: 'User is inactive' };
-    }
+    const tokenResponse = await this.authService.login(validUser);
+    return { isActive: validUser.isActive, ...tokenResponse };
   }
 
   @Post('instance')
