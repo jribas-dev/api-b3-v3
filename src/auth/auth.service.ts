@@ -41,7 +41,7 @@ export class AuthService {
     await this.loginAttemptService.shouldBlock(identifier);
 
     const user = await this.userService.findOneByEmail(email);
-    if (!user || !user.isActive) {
+    if (!user) {
       await this.loginAttemptService.registerFailure(identifier);
       throw new UnauthorizedException('Credenciais inválidas');
     }

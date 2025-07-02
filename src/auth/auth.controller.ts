@@ -37,8 +37,11 @@ export class AuthController {
     );
 
     if (validUser) {
-      const tokenResponse = await this.authService.login(validUser);
-      return tokenResponse;
+      if (validUser.isActive) {
+        const tokenResponse = await this.authService.login(validUser);
+        return { isActive: true, ...tokenResponse };
+      }
+      return { isActive: false, message: 'User is inactive' };
     }
   }
 
