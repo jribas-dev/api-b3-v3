@@ -110,6 +110,7 @@ export class AuthService {
     const refreshToken = await this.refreshTokenService.generate(userInstance);
 
     return {
+      isActive: userInstance.isActive && userInstance.user.isActive,
       accessToken,
       refreshToken,
       tokenType: 'Bearer',
@@ -148,7 +149,7 @@ export class AuthService {
     await this.refreshTokenService.revoke(oldToken);
 
     return {
-      isActive: user.isActive,
+      isActive: user.isActive && tokenData.userInstance.isActive,
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
       tokenType: 'Bearer',
