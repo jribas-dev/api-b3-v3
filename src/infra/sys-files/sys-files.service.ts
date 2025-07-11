@@ -62,34 +62,7 @@ export class SysFilesService {
     return plainToInstance(ResponseSysFileDto, sysFile);
   }
 
-  async getMinorReleases(
-    systemId: string,
-    version: string,
-  ): Promise<ResponseSysFileDto[]> {
-    const sysFile = await this.sysFilesRepo.findOne({
-      where: { idSystem: +systemId, versao: +version },
-    });
-
-    if (!sysFile) throw new NotFoundException(`Version ${version} not found`);
-
-    const versionDb = sysFile.versaoDb.toString();
-    const sysFiles = await this.sysFilesRepo.find({
-      where: {
-        idSystem: +systemId,
-        versaoDb: +versionDb,
-        tipo: SysFilesTipo.UPDATE,
-        versao: MoreThan(+version),
-      },
-    });
-    if (!sysFiles.length)
-      throw new NotFoundException(
-        `No minor releases found for version ${versionDb}`,
-      );
-
-    return sysFiles.map((file) => plainToInstance(ResponseSysFileDto, file));
-  }
-
-  async getMajorReleases(
+  async getReleases(
     systemId: string,
     version: string,
     versionDb: string,
@@ -101,10 +74,32 @@ export class SysFilesService {
         versaoDb: LessThanOrEqual(+versionDb),
         tipo: SysFilesTipo.UPDATE,
       },
+      order: { versao: 'ASC' },
     });
     if (!sysFiles.length)
       throw new NotFoundException(
-        `No major releases found for version ${version} and versionDb ${versionDb}`,
+        `No releases found for version ${version} and versionDb ${versionDb}`,
+      );
+
+    return sysFiles.map((file) => plainToInstance(ResponseSysFileDto, file));
+  }
+
+  async getFullRelease(
+    systemId: string,
+    versionDb: string,
+  ): Promise<ResponseSysFileDto[]> {
+    const sysFiles = await this.sysFilesRepo.find({
+      where: {
+        idSystem: +systemId,
+        versaoDb: LessThanOrEqual(+versionDb),
+        tipo: SysFilesTipo.FULL,
+      },
+      order: { versao: 'DESC' },
+    });
+
+    if (!sysFiles.length)
+      throw new NotFoundException(
+        `No full release found for system ${systemId} and versionDb ${versionDb}`,
       );
 
     return sysFiles.map((file) => plainToInstance(ResponseSysFileDto, file));

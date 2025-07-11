@@ -38,26 +38,22 @@ export class SysFilesController {
   }
 
   @UseGuards(JwtGuard)
-  @Get('system/:id/minor/:version')
+  @Get('system/:id/releases/:version/:versionDb')
   async findMinorReleases(
-    @Param('id') systemId: string,
-    @Param('version') version: string,
-  ) {
-    return await this.sysFilesService.getMinorReleases(systemId, version);
-  }
-
-  @UseGuards(JwtGuard)
-  @Get('system/:id/major/:version/:versionDb')
-  async findMajorReleases(
     @Param('id') systemId: string,
     @Param('version') version: string,
     @Param('versionDb') versionDb: string,
   ) {
-    return await this.sysFilesService.getMajorReleases(
-      systemId,
-      version,
-      versionDb,
-    );
+    return await this.sysFilesService.getReleases(systemId, version, versionDb);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('system/:id/fullpack/:versionDb')
+  async findFullRelease(
+    @Param('id') systemId: string,
+    @Param('versionDb') versionDb: string,
+  ) {
+    return await this.sysFilesService.getFullRelease(systemId, versionDb);
   }
 
   @UseGuards(RootGuard)
