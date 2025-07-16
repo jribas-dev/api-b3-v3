@@ -11,6 +11,8 @@ import {
   UploadedFile,
   ParseFilePipe,
   MaxFileSizeValidator,
+  ClassSerializerInterceptor,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { SqlFilesService } from './sql-files.service';
 import { CreateSqlFileDto } from './dto/create-sql-file.dto';
@@ -79,15 +81,18 @@ export class SqlFilesController {
   }
 
   @UseGuards(JwtGuard)
+  @UseInterceptors(ClassSerializerInterceptor)
   @Get('download/:id')
-  async downloadSql(@Param('id') id: string): Promise<DownloadSqlFileDto> {
+  async downloadSql(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<DownloadSqlFileDto> {
     const buffer: Buffer = await this.sqlFilesService.getSQLBinary(+id);
 
     const newDownload = new DownloadSqlFileDto();
-    newDownload.idSql = +id;
+    newDownload.idSql = id;
     newDownload.sqlData = buffer.toString('base64');
 
-    return { idSql: newDownload.idSql, sqlData: newDownload.sqlData };
+    return newDownload;
   }
 
   @UseGuards(RootGuard)
