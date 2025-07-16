@@ -3,7 +3,7 @@ import { CreateSqlFileDto } from './dto/create-sql-file.dto';
 import { UpdateSqlFileDto } from './dto/update-sql-file.dto';
 import { SqlFilesEntity } from './entities/sql-file.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThanOrEqual, Repository } from 'typeorm';
+import { MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { SqlFilesTipo } from './enums/sql-files-tipo.enum';
 import { ResponseSqlFileDto } from './dto/response-sql-file.dto';
 import { plainToInstance } from 'class-transformer';
@@ -76,7 +76,7 @@ export class SqlFilesService {
     const sqlFiles = await this.sqlFilesRepo.find({
       where: {
         idSystem: systemId,
-        versaoDb: MoreThanOrEqual(fromVersion),
+        versaoDb: MoreThan(fromVersion),
         tipo: SqlFilesTipo.UPDATE,
       },
       order: { versaoDb: 'ASC' },
