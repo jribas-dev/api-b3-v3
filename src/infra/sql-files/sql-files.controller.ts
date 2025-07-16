@@ -80,14 +80,16 @@ export class SqlFilesController {
 
   @UseGuards(JwtGuard)
   @Get('download/:id')
-  async downloadSql(@Param('id') id: string): Promise<DownloadSqlFileDto> {
+  async downloadSql(
+    @Param('id') id: string,
+  ): Promise<{ download: DownloadSqlFileDto }> {
     const buffer: Buffer = await this.sqlFilesService.getSQLBinary(+id);
     const newDownload = new DownloadSqlFileDto();
 
     newDownload.idSql = +id;
     newDownload.sqlData = buffer.toString('base64');
 
-    return newDownload;
+    return { download: newDownload };
   }
 
   @UseGuards(RootGuard)
