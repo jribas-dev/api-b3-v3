@@ -4,7 +4,7 @@
 
 # 📦 API B3 v3 (NestJS)
 
-Este projeto é a API principal da aplicação B3 v3, desenvolvida com **NestJS 11** e **Node.js 22**, utilizando **TypeScript** e arquitetura modular.
+Este projeto é desenvolvido com **NestJS 11** e **Node.js 22**, utilizando **TypeScript** e arquitetura modular.
 
 A API desempenha múltiplas funções:
 
