@@ -95,9 +95,10 @@ src/
 │   ├── user-instance/         # Mapeamento Usuário ↔ Instância com roles
 │   └── user-pre/              # Pré-cadastro e convite de usuários
 │
+├── tenant/                    # TenantService — factory de DataSource por tenant (compartilhado)
+│
 ├── b3vendas/                  # Módulo de domínio de negócio (rotas multi-tenant)
-│   ├── b3vendas.controller.ts # Endpoints com acesso ao banco do tenant
-│   └── tenant/                # TenantService — factory de DataSource por tenant
+│   └── b3vendas.controller.ts # Endpoints com acesso ao banco do tenant
 │
 └── infra/                     # Infraestrutura e serviços externos
     ├── aws-s3/                # Upload/download/exclusão no S3 + presigned URLs
@@ -322,9 +323,9 @@ Cada instância (tenant) possui seu próprio banco de dados. O isolamento é imp
 
 1. **`InstanceEntity`** (banco principal) armazena as credenciais de conexão de cada tenant: `dbHost`, `dbName`, além dos limites `maxCompanies` e `maxUsers`.
 
-2. **`TenantService`** cria um `DataSource` TypeORM isolado por tenant na primeira requisição e armazena em cache (Map em memória). Conexões subsequentes reutilizam o DataSource cacheado.
+2. **`TenantService`** (`src/tenant/`) cria um `DataSource` TypeORM isolado por tenant na primeira requisição e armazena em cache (Map em memória). Conexões subsequentes reutilizam o DataSource cacheado. O módulo `TenantModule` é compartilhado entre todos os módulos de domínio que precisam de acesso multi-tenant (b3vendas, b3dash, b3financeiro, etc.).
 
-3. O **JWT emitido na etapa 2** carrega o campo `dbId`, que identifica o tenant. Todos os controllers do módulo `b3vendas` extraem o `dbId` do `req.user` para obter o DataSource correto via `TenantService`.
+3. O **JWT emitido na etapa 2** carrega o campo `dbId`, que identifica o tenant. Todos os controllers dos módulos de domínio extraem o `dbId` do `req.user` para obter o DataSource correto via `TenantService`.
 
 ```
 JWT (dbId) → TenantService.getDataSource(dbId) → DataSource do tenant → Query

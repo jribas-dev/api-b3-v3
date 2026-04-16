@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { UserInstanceGuard } from 'src/auth/guards/user-instance.guard';
-import { TenantService } from './tenant/tenant.service';
+import { TenantService } from 'src/tenant/tenant.service';
 import { PessoaEntity } from './entities/pessoa.entity';
 
 @Controller('b3vendas')

@@ -5,7 +5,7 @@ import { InstanceEntity } from 'src/user-domain/instance/entities/instance.entit
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { PessoaEntity } from '../entities/pessoa.entity';
+import { PessoaEntity } from 'src/b3vendas/entities/pessoa.entity';
 
 @Injectable()
 export class TenantService {

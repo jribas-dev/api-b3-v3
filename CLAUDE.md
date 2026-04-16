@@ -33,7 +33,7 @@ Os guards aplicam esse fluxo: `JwtAuthGuard` valida o token, `RoleBackGuard` / `
 
 ### Multi-tenancy
 
-O módulo `instance` gerencia os registros de tenant. Cada instance possui suas próprias coordenadas de conexão com o banco de dados (`db_host`, `db_port`, `db_database`). O módulo `b3vendas` conecta-se dinamicamente aos bancos de dados dos tenants usando essas coordenadas — consulte `src/b3vendas/tenant/` para a factory de conexão tenant.
+O módulo `instance` gerencia os registros de tenant. Cada instance possui suas próprias coordenadas de conexão com o banco de dados (`db_host`, `db_port`, `db_database`). O `TenantModule` (`src/tenant/`) é um módulo **compartilhado no nível raiz** que fornece a factory de conexão tenant para todos os módulos de domínio (`b3vendas`, `b3dash`, `b3financeiro`, etc.). Os módulos de domínio importam `TenantModule` para se conectar dinamicamente ao banco de dados do tenant via `TenantService`.
 
 ### Estrutura de Módulos
 
@@ -44,7 +44,8 @@ src/
 ├── user-instance/  # Mapeamento User↔Instance com enums RoleBack/RoleFront
 ├── user-pre/       # Usuários pré-cadastrados/convidados
 ├── instance/       # Gerenciamento de instancias tenant
-├── b3vendas/       # Módulo de domínio; conecta dinamicamente ao DB do tenant
+├── tenant/         # TenantModule/TenantService — factory de DataSource compartilhada entre módulos de domínio
+├── b3vendas/       # Módulo de domínio; usa TenantModule para conectar ao DB do tenant
 ├── infra/
 │   ├── aws-s3/     # Upload/download/delete no S3 + presigned URLs
 │   ├── aws-ses/    # E-mail via SES com templates Handlebars
