@@ -5,7 +5,7 @@ import {
   ManyToOne,
   CreateDateColumn,
 } from 'typeorm';
-import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
+import { UserInstanceEntity } from 'src/user-domain/user-instance/entities/user-instance.entity';
 
 @Entity({ name: 'token_refresh' })
 export class RefreshTokenEntity {

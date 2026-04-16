@@ -6,7 +6,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { UserEntity } from 'src/user/entities/user.entity';
+import { UserEntity } from 'src/user-domain/user/entities/user.entity';
 
 @Entity({ name: 'token_reset' })
 export class ResetPasswordEntity {

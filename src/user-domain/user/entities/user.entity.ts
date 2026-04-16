@@ -7,7 +7,7 @@ import {
   BeforeInsert,
   UpdateDateColumn,
 } from 'typeorm';
-import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
+import { UserInstanceEntity } from 'src/user-domain/user-instance/entities/user-instance.entity';
 import { createId } from '@paralleldrive/cuid2';
 
 @Entity({ name: 'user' })

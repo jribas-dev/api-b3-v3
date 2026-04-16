@@ -1,7 +1,7 @@
 // tenant.service.ts
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { InstanceEntity } from 'src/instance/entities/instance.entity';
+import { InstanceEntity } from 'src/user-domain/instance/entities/instance.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';

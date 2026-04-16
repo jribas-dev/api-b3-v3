@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TenantService } from './tenant.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { InstanceEntity } from 'src/instance/entities/instance.entity';
+import { InstanceEntity } from 'src/user-domain/instance/entities/instance.entity';
 
 @Module({
   imports: [

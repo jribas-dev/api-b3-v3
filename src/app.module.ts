@@ -1,15 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserModule } from './user/user.module';
-import { InstanceModule } from './instance/instance.module';
-import { UserInstanceModule } from './user-instance/user-instance.module';
+import { UserDomainModule } from './user-domain/user-domain.module';
 import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { InfraModule } from './infra/infra.module';
 import { B3vendasModule } from './b3vendas/b3vendas.module';
-import { UserPreModule } from './user-pre/user-pre.module';
 import { configSchemaValidation } from './config.schema';
 
 @Module({
@@ -35,12 +32,9 @@ import { configSchemaValidation } from './config.schema';
         synchronize: true, // cuidado: use false em produção!
       }),
     }),
-    UserModule,
-    InstanceModule,
-    UserInstanceModule,
+    UserDomainModule,
     AuthModule,
     InfraModule,
-    UserPreModule,
     B3vendasModule,
   ],
   controllers: [AppController],

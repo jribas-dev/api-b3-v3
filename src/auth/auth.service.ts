@@ -5,15 +5,15 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserService } from 'src/user/user.service';
+import { UserService } from 'src/user-domain/user/user.service';
 import { PasswordService } from './password/password.service';
 import { RefreshTokenService } from './refresh-token/refresh-token.service';
 import { LoginAttemptService } from './login-attempt/login-attempt.service';
 import { JwtPayload } from './jwt/jwt.payload.interface';
 import { Request } from 'express';
-import { UserEntity } from 'src/user/entities/user.entity';
-import { UserInstanceService } from 'src/user-instance/user-instance.service';
-import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
+import { UserEntity } from 'src/user-domain/user/entities/user.entity';
+import { UserInstanceService } from 'src/user-domain/user-instance/user-instance.service';
+import { UserInstanceEntity } from 'src/user-domain/user-instance/entities/user-instance.entity';
 import { BlacklistService } from './black-list/black-list.service';
 
 @Injectable()

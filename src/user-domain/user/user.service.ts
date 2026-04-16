@@ -9,7 +9,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PasswordService } from 'src/auth/password/password.service';
 import { TemplateType } from 'src/infra/aws-ses/sender/enums/template-type.enum';
 import { AwsSenderService } from 'src/infra/aws-ses/sender/sender.service';
-import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
+import { UserInstanceEntity } from 'src/user-domain/user-instance/entities/user-instance.entity';
 
 @Injectable()
 export class UserService {

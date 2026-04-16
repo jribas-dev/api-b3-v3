@@ -10,13 +10,13 @@ import { CreateUserPreDto } from './dto/create-user-pre.dto';
 import { randomBytes } from 'crypto';
 import { CheckUserPreDto } from './dto/check-user-pre.dto';
 import { UserPreInstanceEntity } from './entities/user-pre-instances.entity';
-import { UserService } from 'src/user/user.service';
-import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { UserService } from 'src/user-domain/user/user.service';
+import { CreateUserDto } from 'src/user-domain/user/dto/create-user.dto';
 import { AwsSenderService } from 'src/infra/aws-ses/sender/sender.service';
 import { TemplateType } from 'src/infra/aws-ses/sender/enums/template-type.enum';
-import { ResponseUserDto } from 'src/user/dto/response-user.dto';
+import { ResponseUserDto } from 'src/user-domain/user/dto/response-user.dto';
 import { plainToInstance } from 'class-transformer';
-import { UserInstanceService } from 'src/user-instance/user-instance.service';
+import { UserInstanceService } from 'src/user-domain/user-instance/user-instance.service';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()

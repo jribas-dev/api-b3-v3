@@ -6,11 +6,11 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { UserPreEntity } from './user-pre.entity';
-import { InstanceEntity } from 'src/instance/entities/instance.entity';
+import { InstanceEntity } from 'src/user-domain/instance/entities/instance.entity';
 import {
   RoleBack,
   RoleFront,
-} from 'src/user-instance/enums/user-instance-roles.enum';
+} from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 
 @Entity({ name: 'user_pre_instances' })
 export class UserPreInstanceEntity {

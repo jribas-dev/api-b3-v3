@@ -1,7 +1,7 @@
 import {
   RoleBack,
   RoleFront,
-} from 'src/user-instance/enums/user-instance-roles.enum';
+} from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 
 export interface JwtPayload {
   sub: string; // userId

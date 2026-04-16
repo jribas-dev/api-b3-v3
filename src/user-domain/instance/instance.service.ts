@@ -7,7 +7,7 @@ import { CreateInstanceDto } from './dto/create-instance.dto';
 import { ResponseInstanceDto } from './dto/response-instance.dto';
 import { plainToInstance } from 'class-transformer';
 import { UpdateInstanceDto } from './dto/update-instance.dto';
-import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
+import { UserInstanceEntity } from 'src/user-domain/user-instance/entities/user-instance.entity';
 
 @Injectable()
 export class InstanceService {

@@ -11,7 +11,7 @@ import {
 import { RolesBack } from 'src/auth/decorators/roles-back.decorator';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { AllowRoot, RolesBackGuard } from 'src/auth/guards/roles-back.guard';
-import { RoleBack } from 'src/user-instance/enums/user-instance-roles.enum';
+import { RoleBack } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 import { UserPreService } from './user-pre.service';
 import { CreateUserPreDto } from './dto/create-user-pre.dto';
 import { CheckUserPreDto } from './dto/check-user-pre.dto';

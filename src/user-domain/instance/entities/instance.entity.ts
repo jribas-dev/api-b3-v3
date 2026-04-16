@@ -7,9 +7,9 @@ import {
   BeforeInsert,
   UpdateDateColumn,
 } from 'typeorm';
-import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
+import { UserInstanceEntity } from 'src/user-domain/user-instance/entities/user-instance.entity';
 import { createId } from '@paralleldrive/cuid2';
-import { UserPreInstanceEntity } from 'src/user-pre/entities/user-pre-instances.entity';
+import { UserPreInstanceEntity } from 'src/user-domain/user-pre/entities/user-pre-instances.entity';
 
 @Entity({ name: 'instance' })
 export class InstanceEntity {

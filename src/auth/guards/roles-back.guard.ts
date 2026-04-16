@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_BACK_KEY } from '../decorators/roles-back.decorator';
-import { RoleBack } from 'src/user-instance/enums/user-instance-roles.enum';
+import { RoleBack } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 
 // Decorator para permitir acesso do root
 export const ALLOW_ROOT_KEY = 'allow-root';

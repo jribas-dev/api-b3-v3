@@ -5,7 +5,7 @@ import { RefreshTokenEntity } from './refresh-token.entity';
 import { randomBytes } from 'crypto';
 import { addDays } from 'date-fns';
 import { isDate } from 'date-fns';
-import { UserInstanceEntity } from 'src/user-instance/entities/user-instance.entity';
+import { UserInstanceEntity } from 'src/user-domain/user-instance/entities/user-instance.entity';
 
 @Injectable()
 export class RefreshTokenService {

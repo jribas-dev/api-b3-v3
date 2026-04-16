@@ -2,7 +2,7 @@ import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import {
   RoleBack,
   RoleFront,
-} from 'src/user-instance/enums/user-instance-roles.enum';
+} from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 
 export class RelationUserPreDto {
   @IsNotEmpty()

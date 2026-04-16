@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserEntity } from 'src/user/entities/user.entity';
+import { UserEntity } from 'src/user-domain/user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { ResetPasswordEntity } from './reset-password.entity';
 import { AwsSenderService } from 'src/infra/aws-ses/sender/sender.service';
