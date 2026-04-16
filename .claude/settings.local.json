@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/DevFull/api-b3-v3/src -type f -name \"*.module.ts\" -exec grep -l \"TenantModule\\\\|TenantService\" {} \\\\;)"
+    ]
+  }
+}

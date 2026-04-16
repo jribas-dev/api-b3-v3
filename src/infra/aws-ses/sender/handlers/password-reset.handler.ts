@@ -10,9 +10,7 @@ interface PasswordResetContext {
 }
 
 @Injectable()
-export class PasswordResetHandler
-  implements TemplateHandler<PasswordResetContext>
-{
+export class PasswordResetHandler implements TemplateHandler<PasswordResetContext> {
   buildHtml(context: PasswordResetContext): string {
     const filePath = path.join(__dirname, '../layouts/password-reset.hbs');
     const source = fs.readFileSync(filePath, 'utf8');

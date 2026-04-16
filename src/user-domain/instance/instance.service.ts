@@ -8,6 +8,7 @@ import { ResponseInstanceDto } from './dto/response-instance.dto';
 import { plainToInstance } from 'class-transformer';
 import { UpdateInstanceDto } from './dto/update-instance.dto';
 import { UserInstanceEntity } from 'src/user-domain/user-instance/entities/user-instance.entity';
+import { TenantService } from 'src/tenant/tenant.service';
 
 @Injectable()
 export class InstanceService {
@@ -16,6 +17,7 @@ export class InstanceService {
     private readonly instanceRepo: Repository<InstanceEntity>,
     @InjectRepository(UserInstanceEntity)
     private readonly userInstanceRepo: Repository<UserInstanceEntity>,
+    private readonly tenantService: TenantService,
   ) {}
 
   async create(data: Partial<CreateInstanceDto>): Promise<ResponseInstanceDto> {
@@ -53,6 +55,16 @@ export class InstanceService {
         { isActive: false },
       );
     }
+
+    // evict cached DataSource if pool-relevant fields changed
+    if (
+      updates.maxUsers !== undefined ||
+      updates.dbHost !== undefined ||
+      updates.dbName !== undefined
+    ) {
+      await this.tenantService.evictDataSource(dbId);
+    }
+
     return plainToInstance(ResponseInstanceDto, updatedInstance);
   }
 }
