@@ -1,11 +1,21 @@
 import { Module } from '@nestjs/common';
-import { B3vendasService } from './b3vendas.service';
-import { B3vendasController } from './b3vendas.controller';
-import { TenantModule } from 'src/tenant/tenant.module';
+import { B3vendasSharedModule } from './shared/shared.module';
+import { OperacaoModule } from './operacao/operacao.module';
+import { ClienteModule } from './cliente/cliente.module';
+import { ProdutoModule } from './produto/produto.module';
+import { FormasPagamentoModule } from './formas-pagamento/formas-pagamento.module';
+import { VendaModule } from './venda/venda.module';
+import { VendaItemModule } from './venda-item/venda-item.module';
 
 @Module({
-  providers: [B3vendasService],
-  controllers: [B3vendasController],
-  imports: [TenantModule],
+  imports: [
+    B3vendasSharedModule,
+    OperacaoModule,
+    ClienteModule,
+    ProdutoModule,
+    FormasPagamentoModule,
+    VendaModule,
+    VendaItemModule,
+  ],
 })
 export class B3vendasModule {}

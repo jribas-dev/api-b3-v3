@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Este arquivo fornece orientações ao Claude Code (claude.ai/code) ao trabalhar com o código deste repositório.
+Este arquivo fornece orientações ao Claude Code (claude.ai/code) ao trabalhar com o código deste repositório. Ele apresenta a **visão geral do projeto** e aponta para a documentação detalhada de cada módulo.
 
 ## Comandos
 
@@ -14,70 +14,151 @@ npm run format       # Formatação com Prettier
 ```
 
 ## Tests
+
 Até o momento nenhum test runner está configurado neste projeto.
+
+---
 
 ## Visão Geral da Arquitetura
 
-Esta é uma REST API **NestJS 11 / Node.js 22** escrita em TypeScript com dois papéis principais:
+REST API em **NestJS 11 / Node.js 22 / TypeScript** com três responsabilidades principais:
 
-1. **Authorization Server** — login baseado em JWT com refresh tokens rotativos, autenticação em múltiplas etapas (login → seleção de instance → token com escopo), blacklist de tokens para logout e proteção contra força bruta via rastreamento de tentativas de login.
-2. **Resource Server** — acesso a recursos multi-tenant, gerenciamento de arquivos no AWS S3, envio de e-mails via AWS SES.
+1. **Authorization Server** — login JWT em duas etapas (login → seleção de instance → token com escopo), refresh tokens rotativos, blacklist para logout, proteção contra força bruta, reset de senha por e-mail.
+2. **Resource Server Multi-Tenant** — cada *instance* é um tenant com seu próprio banco MySQL. Módulos de domínio (ex: `b3vendas`) conectam dinamicamente ao banco do tenant via `TenantModule`.
+3. **Serviços de Infraestrutura** — arquivos no AWS S3, e-mails transacionais via AWS SES, catálogo de scripts SQL e pacotes de sistema.
 
-### Fluxo de Autenticação em Múltiplas Etapas
+### Diagrama de Alto Nível
 
-O login é um processo de duas etapas:
-1. `POST /auth/login` — valida as credenciais e retorna um JWT de curta duração contendo apenas o `userId`.
-2. `POST /auth/instance` — o usuário seleciona uma instance tenant; retorna um JWT com escopo (30 min) + refresh token (180 min) que inclui `instanceId`, `roleBack` e `roleFront`.
+```
+┌──────────────────────────────────────────────────────────┐
+│ AppModule (banco principal — usuários, tenants, tokens)  │
+│                                                          │
+│  ┌──────────┐   ┌───────────────┐   ┌──────────────┐     │
+│  │   auth   │   │  user-domain  │   │    infra     │     │
+│  └──────────┘   └───────────────┘   └──────────────┘     │
+│                                                          │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │                    tenant                          │  │
+│  │  (factory de DataSource por dbId — compartilhado)  │  │
+│  └────────────────────────────────────────────────────┘  │
+│                         ▼                                │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │  Módulos de domínio (banco do tenant)              │  │
+│  │  ┌───────────┐  ┌───────────┐  ┌──────────────┐    │  │
+│  │  │ b3vendas  │  │  b3dash*  │  │ b3financeiro*│    │  │
+│  │  └───────────┘  └───────────┘  └──────────────┘    │  │
+│  │  (* — planejados)                                  │  │
+│  └────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────┘
+```
 
-Os guards aplicam esse fluxo: `JwtAuthGuard` valida o token, `RoleBackGuard` / `RoleFrontGuard` verificam os roles RBAC, e `RootGuard` restringe endpoints exclusivos ao superadmin.
+---
 
-### Multi-tenancy
+## Módulos
 
-O módulo `instance` gerencia os registros de tenant. Cada instance possui suas próprias coordenadas de conexão com o banco de dados (`db_host`, `db_port`, `db_database`). O `TenantModule` (`src/tenant/`) é um módulo **compartilhado no nível raiz** que fornece a factory de conexão tenant para todos os módulos de domínio (`b3vendas`, `b3dash`, `b3financeiro`, etc.). Os módulos de domínio importam `TenantModule` para se conectar dinamicamente ao banco de dados do tenant via `TenantService`.
+| Módulo | Responsabilidade | Documentação |
+|---|---|---|
+| [`auth`](src/auth/CLAUDE.md) | Login em 2 etapas, JWT, refresh tokens, blacklist, reset de senha, RBAC via guards | [src/auth/CLAUDE.md](src/auth/CLAUDE.md) |
+| [`user-domain`](src/user-domain/CLAUDE.md) | Agregador: `user`, `user-instance`, `user-pre`, `instance` | [src/user-domain/CLAUDE.md](src/user-domain/CLAUDE.md) |
+| [`tenant`](src/tenant/CLAUDE.md) | Factory + cache de DataSources por tenant; `CfgService` para parâmetros do tenant | [src/tenant/CLAUDE.md](src/tenant/CLAUDE.md) |
+| [`b3vendas`](src/b3vendas/CLAUDE.md) | Domínio de vendas: clientes, produtos, pedidos, impostos (IPI/ICMS-ST) | [src/b3vendas/CLAUDE.md](src/b3vendas/CLAUDE.md) |
+| [`infra`](src/infra/CLAUDE.md) | Agregador: `aws-s3`, `aws-ses`, `sql-files`, `sys-files` | [src/infra/CLAUDE.md](src/infra/CLAUDE.md) |
 
-### Estrutura de Módulos
+### Sub-módulos de `user-domain`
+
+| Sub-módulo | Tabelas | Documentação |
+|---|---|---|
+| `instance` | `instance` | [src/user-domain/instance/CLAUDE.md](src/user-domain/instance/CLAUDE.md) |
+| `user` | `user` | [src/user-domain/user/CLAUDE.md](src/user-domain/user/CLAUDE.md) |
+| `user-instance` | `user_instances` | [src/user-domain/user-instance/CLAUDE.md](src/user-domain/user-instance/CLAUDE.md) |
+| `user-pre` | `user_pre`, `user_pre_instances` | [src/user-domain/user-pre/CLAUDE.md](src/user-domain/user-pre/CLAUDE.md) |
+
+### Sub-módulos de `infra`
+
+| Sub-módulo | Prefixo REST | Documentação |
+|---|---|---|
+| `aws-s3` | `/infra/aws-s3` | [src/infra/aws-s3/CLAUDE.md](src/infra/aws-s3/CLAUDE.md) |
+| `aws-ses` | `/infra/aws-ses` | [src/infra/aws-ses/CLAUDE.md](src/infra/aws-ses/CLAUDE.md) |
+| `sql-files` | `/sql-files` | [src/infra/sql-files/CLAUDE.md](src/infra/sql-files/CLAUDE.md) |
+| `sys-files` | `/sys-files` | [src/infra/sys-files/CLAUDE.md](src/infra/sys-files/CLAUDE.md) |
+
+---
+
+## Estrutura de Diretórios
 
 ```
 src/
-├── auth/           # Login, refresh, logout, reset-password, black-list, guards, JWT strategy
-├── user/           # CRUD de usuários
-├── user-instance/  # Mapeamento User↔Instance com enums RoleBack/RoleFront
-├── user-pre/       # Usuários pré-cadastrados/convidados
-├── instance/       # Gerenciamento de instancias tenant
-├── tenant/         # TenantModule/TenantService — factory de DataSource compartilhada entre módulos de domínio
-├── b3vendas/       # Módulo de domínio; usa TenantModule para conectar ao DB do tenant
-├── infra/
-│   ├── aws-s3/     # Upload/download/delete no S3 + presigned URLs
-│   ├── aws-ses/    # E-mail via SES com templates Handlebars
-│   ├── sys-files/  # Rastreamento de arquivos do sistema
-│   └── sql-files/  # Gerenciamento de arquivos SQL
-└── config.schema.ts  # Validação Joi de todas as variáveis de ambiente
+├── app.module.ts           # Módulo raiz — compõe todos os demais
+├── main.ts                 # Bootstrap NestJS
+├── config.schema.ts        # Validação Joi de variáveis de ambiente
+├── auth/                   # Servidor de autorização
+├── user-domain/            # Usuários, tenants e vínculos
+├── tenant/                 # Factory multi-tenant de DataSources
+├── b3vendas/               # Domínio de vendas (tenant-scoped)
+└── infra/                  # Serviços transversais (S3, SES, arquivos)
 ```
+
+---
+
+## Conceitos Transversais
+
+### Multi-tenancy
+
+- **Banco principal** — usuários, tenants (tabela `instance`), tokens, arquivos de sistema.
+- **Banco por tenant** — dados de domínio (`cliente`, `venda`, `prd`, etc.). Cada `instance` tem `dbHost` + `dbName` próprios.
+- O [`TenantModule`](src/tenant/CLAUDE.md) resolve o `dbId` em um `DataSource` cacheado. Módulos de domínio injetam `TenantService` para obter o repositório no banco correto.
+
+### Autenticação em Duas Etapas
+
+```
+POST /auth/login     { email, password }        → JWT (30 min, sem escopo)
+POST /auth/instance  { dbId }                   → JWT (180 min) + refreshToken
+                                                   payload inclui: instanceId, roleBack, roleFront
+POST /auth/refresh   { refreshToken }           → rotação (novo par)
+POST /auth/logout                               → blacklist do JWT atual
+```
+
+Guards aplicados em ordem:
+1. `JwtGuard` — valida assinatura + checa blacklist
+2. `UserInstanceGuard` — exige `dbId` no payload (token etapa 2)
+3. `RolesBackGuard` / `RolesFrontGuard` — RBAC
+4. `RootGuard` — superadmin exclusivo
+
+Detalhes em [src/auth/CLAUDE.md](src/auth/CLAUDE.md).
 
 ### Estratégia de ID das Entities
 
-Todas as entities geram IDs usando CUID2 (`@paralleldrive/cuid2`) em um hook `@BeforeInsert()` — não utilizam auto-increment. Não espere IDs numéricos ou UUID.
+- **Banco principal:** entities geram IDs via **CUID2** (`@paralleldrive/cuid2`) em hook `@BeforeInsert()` — não há auto-increment nem UUID.
+- **Banco do tenant:** entities legadas usam **IDs numéricos inteiros** (ver [`b3vendas`](src/b3vendas/CLAUDE.md)).
 
 ### Templates de E-mail
 
-Os layouts de e-mail são arquivos Handlebars (`.hbs`) em `src/infra/aws-ses/sender/layouts/`. O `nest-cli.json` copia esses arquivos para `dist/` durante o build. Adicionar um novo tipo de e-mail requer: um arquivo de layout, um handler em `handlers/` e uma nova entrada em `TemplateTypeEnum`.
+Arquivos Handlebars (`.hbs`) em `src/infra/aws-ses/sender/layouts/`. O `nest-cli.json` copia esses arquivos para `dist/` durante o build. Adicionar um novo template exige: arquivo de layout, handler em `handlers/` e entrada em `TemplateTypeEnum`. Detalhes em [src/infra/aws-ses/CLAUDE.md](src/infra/aws-ses/CLAUDE.md).
 
-### Variáveis de Ambiente
+### Sincronização do TypeORM
 
-Todas as variáveis obrigatórias são validadas na inicialização via Joi (`src/config.schema.ts`). Copie `.env.sample` para `.env` antes de executar localmente. Grupos principais:
+- **Banco principal:** `synchronize: true` em desenvolvimento — schema aplicado na inicialização. Deve ser `false` em produção.
+- **Banco do tenant:** `synchronize: false` sempre — schema governado por scripts versionados (ver `sql-files`).
+- Não há arquivos de migration; alterações em produção exigem migrations explícitas.
+
+---
+
+## Variáveis de Ambiente
+
+Todas as variáveis obrigatórias são validadas na inicialização via Joi ([`src/config.schema.ts`](src/config.schema.ts)). Copie `.env.sample` para `.env` antes de executar localmente.
 
 | Grupo | Variáveis |
 |---|---|
 | App | `APP_ENVIRONMENT`, `APP_NAME`, `APP_PORT` |
-| Database | `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE` |
+| Database (principal + tenant) | `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE` |
 | JWT | `JWT_SECRET` |
 | AWS | `AWS_REGION`, `AWS_SDK_KEY`, `AWS_SDK_SECRET`, `S3_BUCKET_NAME`, `SES_FROM_EMAIL` |
 | URLs | `UPLOAD_PATH`, `STATIC_URL`, `FRONTEND_URL`, `BACKEND_URL` |
 
-### Sincronização do TypeORM
+> `DB_HOST` é usado apenas pelo banco principal. Os bancos dos tenants são resolvidos a partir de `InstanceEntity.dbHost` — ver [src/tenant/CLAUDE.md](src/tenant/CLAUDE.md).
 
-`synchronize: true` é usado em desenvolvimento — alterações no schema são aplicadas automaticamente na inicialização. **Deve ser `false` em produção.** Não há arquivos de migration; alterações no schema em produção exigem migrations explícitas do TypeORM.
+---
 
-### Deploy
+## Deploy
 
-O `deploy.sh` gerencia os deploys de produção: git pull → npm install → nest build → reinicialização do PM2. O PM2 gerencia o processo. Execute `node dist/main` como ponto de entrada em produção. **Retirado do repositório remoto.**
+`deploy.sh` gerencia os deploys de produção: `git pull` → `npm install` → `nest build` → reinicialização do PM2. O PM2 gerencia o processo. Entrada em produção: `node dist/main`. **O script foi retirado do repositório remoto.**
