@@ -30,9 +30,10 @@ Serviço central de `shared/`. Todo endpoint do módulo chama `sellerContext.res
 |---|---|---|
 | `usuId` | number | ID do registro `usu` no tenant |
 | `vendId` | number | ID do vendedor vinculado ao usuário |
-| `empId` | number | ID da empresa vinculada ao usuário |
 
-Lança `ForbiddenException` se o usuário não tiver vendedor/empresa configurados no tenant. Todas as queries subsequentes filtram por `idvend = vendId` para isolamento multi-tenant.
+Lança `ForbiddenException` se o usuário não estiver vinculado a um vendedor no tenant. Todas as queries subsequentes filtram por `idvend = vendId` para isolamento multi-tenant.
+
+> **`idemp` não está mais no contexto do vendedor.** O frontend deve informar `idemp` obrigatoriamente em cada request. Isso permite que um mesmo usuário opere em diferentes empresas sem troca de token.
 
 ## DecimalTransformer
 
@@ -71,7 +72,7 @@ Somente vendas com `tipo = 'O'` permitem inclusão/remoção de itens e atualiza
 
 ## Fluxo de Criação de Pedido
 
-1. `POST /b3vendas/pedidos` — cria venda em estado `'O'`, com `idvend` e `idemp` do contexto do vendedor. `plataforma="SALESFORCE"`, `processo="B3PED.exe"`.
+1. `POST /b3vendas/pedidos` — cria venda em estado `'O'`, com `idvend` do contexto do vendedor e `idemp` enviado pelo frontend no corpo do request. `plataforma="SALESFORCE"`, `processo="B3PED.exe"`.
 2. `POST /b3vendas/pedidos/:id/itens` — adiciona itens; após cada inserção, `recalcTotals()` recalcula os totais da venda.
 3. `DELETE /b3vendas/pedidos/:id/itens/:seq` — remove item; dispara `recalcTotals()`.
 4. `POST /b3vendas/pedidos/:id/fechar` — insere registro em `vendacaixa` (em transação, deletando entradas anteriores) e salva `obsinter`.
@@ -253,13 +254,13 @@ PK composta: `idvenda` + `seq`.
 | `POST` | `/b3vendas/clientes` | Criar cliente |
 | `PATCH` | `/b3vendas/clientes/:id` | Atualizar cliente |
 | `DELETE` | `/b3vendas/clientes/:id` | Remover cliente (role SUPER) |
-| `GET` | `/b3vendas/operacoes` | Listar operações permitidas |
+| `GET` | `/b3vendas/operacoes?idemp=` | Listar operações permitidas para a empresa |
 | `GET` | `/b3vendas/produtos/buscar?q=` | Busca produtos (mín. 2 chars, máx. 50) |
 | `GET` | `/b3vendas/produtos/:id/preco?idCli=&idOper=` | Preço do produto para cliente/operação |
 | `POST` | `/b3vendas/produtos/:id/calc-imposto` | Calcular IPI/ST sobre subtotal |
-| `POST` | `/b3vendas/pedidos` | Criar pedido |
-| `GET` | `/b3vendas/pedidos/editaveis` | Pedidos abertos (últimos 5 dias) |
-| `GET` | `/b3vendas/pedidos/fechados` | Pedidos fechados (últimos 30 dias) |
+| `POST` | `/b3vendas/pedidos` | Criar pedido (`idemp` obrigatório no body) |
+| `GET` | `/b3vendas/pedidos/editaveis?idemp=` | Pedidos abertos do vendedor/empresa (últimos 5 dias) |
+| `GET` | `/b3vendas/pedidos/fechados?idemp=` | Pedidos fechados do vendedor/empresa (últimos 30 dias, `tipo IN ('P','V')`) |
 | `GET` | `/b3vendas/pedidos/:id` | Detalhes do pedido com itens |
 | `GET` | `/b3vendas/pedidos/:id/formas-disponiveis` | Formas de pagamento disponíveis |
 | `GET` | `/b3vendas/pedidos/:id/condicoes-disponiveis` | Condições de pagamento disponíveis |

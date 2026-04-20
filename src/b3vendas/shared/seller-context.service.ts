@@ -4,7 +4,6 @@ import { TenantService } from 'src/tenant/tenant.service';
 export interface SellerContext {
   usuId: number;
   vendId: number;
-  empId: number;
 }
 
 @Injectable()
@@ -13,11 +12,8 @@ export class SellerContextService {
 
   async resolve(dbId: string, userId: string): Promise<SellerContext> {
     const ds = await this.tenantService.getDataSource(dbId);
-    const rows = await ds.query<
-      { id: number; idvend: number | null; idemp: number | null }[]
-    >(
-      `SELECT u.id, u.idvend,
-              (SELECT idcnt FROM usuemp WHERE idusu = u.id LIMIT 1) AS idemp
+    const rows = await ds.query<{ id: number; idvend: number | null }[]>(
+      `SELECT u.id, u.idvend
          FROM usu u
         WHERE u.userId = ?
         LIMIT 1`,
@@ -25,12 +21,12 @@ export class SellerContextService {
     );
 
     const row = rows[0];
-    if (!row || row.idvend == null || row.idemp == null) {
+    if (!row || row.idvend == null) {
       throw new ForbiddenException(
-        'Usuário não vinculado a vendedor/empresa nesta instância',
+        'Usuário não vinculado a vendedor nesta instância',
       );
     }
 
-    return { usuId: row.id, vendId: row.idvend, empId: row.idemp };
+    return { usuId: row.id, vendId: row.idvend };
   }
 }

@@ -14,4 +14,8 @@ export class CreateVendaDto {
   @IsInt()
   @Min(1)
   idOper: number;
+
+  @IsInt()
+  @Min(1)
+  idemp: number;
 }

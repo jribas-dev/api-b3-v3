@@ -59,7 +59,7 @@ export class VendaService {
     userId: string,
     dto: CreateVendaDto,
   ): Promise<{ id: number }> {
-    const { usuId, vendId, empId } = await this.sellerContextService.resolve(
+    const { usuId, vendId } = await this.sellerContextService.resolve(
       dbId,
       userId,
     );
@@ -75,7 +75,7 @@ export class VendaService {
       subtipo: operacao.subtipo ?? 'N',
       idcli: dto.idCli,
       idvend: vendId,
-      idemp: empId,
+      idemp: dto.idemp,
       plataforma: 'SALESFORCE',
       processo: 'B3PED.exe',
       ultimousu: usuId,
@@ -88,6 +88,7 @@ export class VendaService {
   async findEditaveis(
     dbId: string,
     userId: string,
+    idemp: number,
   ): Promise<ResponseVendaResumoDto[]> {
     const { vendId } = await this.sellerContextService.resolve(dbId, userId);
     const ds = await this.tenantService.getDataSource(dbId);
@@ -99,9 +100,10 @@ export class VendaService {
          LEFT JOIN cnt b ON a.idcli = b.id
         WHERE a.tipo = 'O'
           AND a.idvend = ?
+          AND a.idemp = ?
           AND CURRENT_TIMESTAMP < DATE_ADD(a.dthremissao, INTERVAL 5 DAY)
         ORDER BY a.id DESC`,
-      [vendId],
+      [vendId, idemp],
     );
 
     return rows.map((r) =>
@@ -115,6 +117,7 @@ export class VendaService {
   async findFechados(
     dbId: string,
     userId: string,
+    idemp: number,
   ): Promise<ResponseVendaResumoDto[]> {
     const { vendId } = await this.sellerContextService.resolve(dbId, userId);
     const ds = await this.tenantService.getDataSource(dbId);
@@ -124,11 +127,12 @@ export class VendaService {
               a.dthremissao, a.tipo, a.vlrtotal
          FROM venda a
          LEFT JOIN cnt b ON a.idcli = b.id
-        WHERE a.tipo IN ('O','P','V')
+        WHERE a.tipo IN ('P', 'V')
           AND a.idvend = ?
+          AND a.idemp = ?
           AND CURRENT_TIMESTAMP < DATE_ADD(a.dthremissao, INTERVAL 30 DAY)
         ORDER BY a.id DESC`,
-      [vendId],
+      [vendId, idemp],
     );
 
     return rows.map((r) =>

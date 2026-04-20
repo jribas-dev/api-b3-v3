@@ -7,6 +7,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -16,6 +17,7 @@ import { FormasPagamentoService } from 'src/b3vendas/formas-pagamento/formas-pag
 import { VendaService } from './venda.service';
 import { CreateVendaDto } from './dto/create-venda.dto';
 import { FecharVendaDto } from './dto/fechar-venda.dto';
+import { ListVendasQueryDto } from './dto/list-vendas-query.dto';
 
 @Controller('b3vendas/pedidos')
 @UseGuards(JwtGuard, UserInstanceGuard)
@@ -35,13 +37,27 @@ export class VendaController {
   }
 
   @Get('editaveis')
-  async editaveis(@Request() req: { user: { userId: string; dbId: string } }) {
-    return this.vendaService.findEditaveis(req.user.dbId, req.user.userId);
+  async editaveis(
+    @Request() req: { user: { userId: string; dbId: string } },
+    @Query() query: ListVendasQueryDto,
+  ) {
+    return this.vendaService.findEditaveis(
+      req.user.dbId,
+      req.user.userId,
+      query.idemp,
+    );
   }
 
   @Get('fechados')
-  async fechados(@Request() req: { user: { userId: string; dbId: string } }) {
-    return this.vendaService.findFechados(req.user.dbId, req.user.userId);
+  async fechados(
+    @Request() req: { user: { userId: string; dbId: string } },
+    @Query() query: ListVendasQueryDto,
+  ) {
+    return this.vendaService.findFechados(
+      req.user.dbId,
+      req.user.userId,
+      query.idemp,
+    );
   }
 
   @Get(':id')

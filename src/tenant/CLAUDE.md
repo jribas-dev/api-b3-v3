@@ -102,7 +102,7 @@ export interface CfgValue {
 | `descricao` | varchar(250) nullable | Descrição do parâmetro |
 | `valor` | varchar(120) | Valor armazenado |
 
-**Uso conhecido:** `OperacaoService` (b3vendas) lê `VWEBOPERCOND` para interpolar cláusula SQL dinâmica no filtro de operações permitidas por deployment.
+**Uso conhecido:** `OperacaoService` (b3vendas) lê `VWEBOPERCOND` para interpolar cláusula SQL dinâmica no filtro de operações permitidas por deployment. `SellerContextService` (b3vendas/shared) usa `TenantService` apenas para resolver `usuId` e `vendId` — `empId` foi removido do contexto e deve ser passado explicitamente pelo frontend.
 
 ## TENANT_ENTITIES
 

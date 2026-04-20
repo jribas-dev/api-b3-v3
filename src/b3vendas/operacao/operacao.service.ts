@@ -18,8 +18,9 @@ export class OperacaoService {
   async listarPermitidas(
     dbId: string,
     userId: string,
+    idemp: number,
   ): Promise<ResponseOperacaoDto[]> {
-    const { empId } = await this.sellerContextService.resolve(dbId, userId);
+    await this.sellerContextService.resolve(dbId, userId);
     const { valor: operFilter } = await this.cfgService.get(
       dbId,
       'VWEBOPERCOND',
@@ -31,8 +32,8 @@ export class OperacaoService {
       .createQueryBuilder('o')
       .where('o.saidaentrada = :saidaentrada', { saidaentrada: '1' })
       .andWhere(operFilter)
-      .andWhere('(o.idemp IS NULL OR o.idemp = 0 OR o.idemp = :empId)', {
-        empId,
+      .andWhere('(o.idemp IS NULL OR o.idemp = 0 OR o.idemp = :idemp)', {
+        idemp,
       })
       .orderBy('o.operacao', 'ASC')
       .getMany();
