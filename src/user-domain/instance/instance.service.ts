@@ -51,7 +51,8 @@ export class InstanceService {
     if (updates.name !== undefined) instance.name = updates.name;
     if (updates.dbName !== undefined) instance.dbName = updates.dbName;
     if (updates.dbHost !== undefined) instance.dbHost = updates.dbHost;
-    if (updates.maxCompanies !== undefined) instance.maxCompanies = updates.maxCompanies;
+    if (updates.maxCompanies !== undefined)
+      instance.maxCompanies = updates.maxCompanies;
     if (updates.maxUsers !== undefined) instance.maxUsers = updates.maxUsers;
     if (updates.isActive !== undefined) instance.isActive = updates.isActive;
 

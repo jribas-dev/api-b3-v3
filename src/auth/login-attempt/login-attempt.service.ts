@@ -34,7 +34,11 @@ export class LoginAttemptService {
     let record = await this.attemptRepo.findOne({ where: { identifier } });
 
     if (!record) {
-      record = this.attemptRepo.create({ identifier, attempts: 0, blockedUntil: null });
+      record = this.attemptRepo.create({
+        identifier,
+        attempts: 0,
+        blockedUntil: null,
+      });
     }
 
     record.attempts += 1;

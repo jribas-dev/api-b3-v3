@@ -26,10 +26,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(
-    @Req() req: Request,
-    @Body() loginDto: LoginDto,
-  ) {
+  async login(@Req() req: Request, @Body() loginDto: LoginDto) {
     const clientFingerprint = this.loginAttemptService.getIdentifier(req);
     await this.loginAttemptService.shouldBlock(clientFingerprint);
 

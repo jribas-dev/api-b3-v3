@@ -31,9 +31,7 @@ export class AwsS3Service {
   ) {
     this.region =
       (this.configService.get<string>('AWS_REGION') as string) || 'us-east-1';
-    this.defaultBucket = this.configService.get<string>(
-      'S3_BUCKET_NAME',
-    ) as string;
+    this.defaultBucket = this.configService.get<string>('S3_BUCKET_NAME');
     this.uploadPath = this.configService.get<string>('UPLOAD_PATH') as string;
     this.staticUrl = this.configService.get<string>('STATIC_URL') as string;
   }
@@ -127,7 +125,10 @@ export class AwsS3Service {
     });
     try {
       await this.s3.send(putCommand);
-      const getCommand = new GetObjectCommand({ Bucket: targetBucket, Key: fullKey });
+      const getCommand = new GetObjectCommand({
+        Bucket: targetBucket,
+        Key: fullKey,
+      });
       const expiresIn = 3600;
       const url = await getSignedUrl(this.s3, getCommand, { expiresIn });
       return { url, expiresIn };
@@ -138,7 +139,9 @@ export class AwsS3Service {
           `Erro no AWS S3 [${statusCode}]: ${error.name} - ${error.message}`,
         );
       }
-      throw new Error(`Erro desconhecido no upload privado: ${error as string}`);
+      throw new Error(
+        `Erro desconhecido no upload privado: ${error as string}`,
+      );
     }
   }
 
