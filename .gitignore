@@ -3,8 +3,6 @@
 /node_modules
 /build
 
-/.claude
-/legacy
 deploy.sh
 
 # Logs
