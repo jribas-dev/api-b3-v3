@@ -8,7 +8,9 @@
       "Bash(npm audit *)",
       "Bash(npm outdated *)",
       "Bash(npm list *)",
-      "Bash(npm view *)"
+      "Bash(npm view *)",
+      "WebSearch",
+      "mcp__mysql__execute_sql"
     ]
   }
 }
