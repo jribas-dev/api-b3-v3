@@ -7,9 +7,11 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
   S3ServiceException,
   PutObjectCommandOutput,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
 import { promises as fsPromises } from 'fs';
@@ -106,6 +108,37 @@ export class AwsS3Service {
         throw new InternalServerErrorException(errorMessage);
       }
       throw new Error(`Erro desconhecido no upload: ${error as string}`);
+    }
+  }
+
+  async uploadAwsS3Private(
+    file: Express.Multer.File,
+    fullKey: string,
+    bucket?: string,
+  ): Promise<{ url: string; expiresIn: number }> {
+    const targetBucket = bucket || this.defaultBucket;
+    const stream = Readable.from(file.buffer);
+    const putCommand = new PutObjectCommand({
+      Bucket: targetBucket,
+      Key: fullKey,
+      Body: stream,
+      ContentType: file.mimetype,
+      ContentLength: file.size,
+    });
+    try {
+      await this.s3.send(putCommand);
+      const getCommand = new GetObjectCommand({ Bucket: targetBucket, Key: fullKey });
+      const expiresIn = 3600;
+      const url = await getSignedUrl(this.s3, getCommand, { expiresIn });
+      return { url, expiresIn };
+    } catch (error) {
+      if (error instanceof S3ServiceException) {
+        const statusCode = error.$metadata?.httpStatusCode || 500;
+        throw new InternalServerErrorException(
+          `Erro no AWS S3 [${statusCode}]: ${error.name} - ${error.message}`,
+        );
+      }
+      throw new Error(`Erro desconhecido no upload privado: ${error as string}`);
     }
   }
 

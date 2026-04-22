@@ -52,9 +52,7 @@ export class TenantService implements OnModuleDestroy {
     await ds.initialize();
     this.connections.set(dbId, ds);
 
-    this.logger.log(
-      `Tenant "${dbId}" connected → ${inst.dbHost}/${inst.dbName} (pool: ${inst.maxUsers})`,
-    );
+    this.logger.log(`Tenant "${dbId}" connected (pool: ${inst.maxUsers})`);
 
     return ds;
   }

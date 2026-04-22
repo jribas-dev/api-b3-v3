@@ -1,4 +1,5 @@
 import { S3Client } from '@aws-sdk/client-s3';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { ConfigService } from '@nestjs/config';
 
 export const S3_CLIENT = 'S3_CLIENT';
@@ -16,6 +17,7 @@ export const s3ClientFactory = {
         accessKeyId: aKeyId,
         secretAccessKey: sKeyId,
       },
+      requestHandler: new NodeHttpHandler({ requestTimeout: 10_000 }),
     });
   },
   inject: [ConfigService],

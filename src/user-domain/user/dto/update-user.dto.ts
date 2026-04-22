@@ -1,15 +1,12 @@
 import {
-  IsBoolean,
   IsEmail,
   IsOptional,
   IsPhoneNumber,
   IsString,
   MinLength,
 } from 'class-validator';
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateUserDto } from './create-user.dto';
 
-export class UpdateUserDto extends PartialType(CreateUserDto) {
+export class UpdateUserDto {
   @IsEmail()
   @IsOptional()
   email?: string;
@@ -26,8 +23,4 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsString()
   @IsOptional()
   name?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  isActive?: boolean;
 }

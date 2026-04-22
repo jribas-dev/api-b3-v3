@@ -1,74 +1,63 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Request } from 'express';
-
-interface AttemptInfo {
-  count: number;
-  lastAttempt: Date;
-  blockedUntil?: Date;
-}
+import { LoginAttemptEntity } from './login-attempt.entity';
 
 @Injectable()
 export class LoginAttemptService {
-  private attempts: Map<string, AttemptInfo> = new Map();
   private readonly maxAttempts = 5;
   private readonly blockDurationMs = 60 * 60 * 1000; // 1 hora
 
-  // Identificador por IP + User-Agent
+  constructor(
+    @InjectRepository(LoginAttemptEntity)
+    private readonly attemptRepo: Repository<LoginAttemptEntity>,
+  ) {}
+
   getIdentifier(req: Request): string {
-    const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    const userAgent = req.headers['user-agent'] || '';
-    return `${ip}::${userAgent}`;
+    return req.ip || req.connection.remoteAddress || 'unknown';
   }
 
   async shouldBlock(identifier: string): Promise<void> {
-    const info = this.attempts.get(identifier);
-
-    if (info?.blockedUntil && info.blockedUntil > new Date()) {
+    const record = await this.attemptRepo.findOne({ where: { identifier } });
+    if (record?.blockedUntil && record.blockedUntil > new Date()) {
       const minutesLeft = Math.ceil(
-        (info.blockedUntil.getTime() - Date.now()) / 60000,
+        (record.blockedUntil.getTime() - Date.now()) / 60000,
       );
       throw new UnauthorizedException(
         `Bloqueado por excesso de tentativas. Tente novamente em ${minutesLeft} minutos.`,
       );
     }
-    return Promise.resolve();
   }
 
   async registerFailure(identifier: string): Promise<void> {
-    const now = new Date();
-    const info = this.attempts.get(identifier) || {
-      count: 0,
-      lastAttempt: now,
-    };
+    let record = await this.attemptRepo.findOne({ where: { identifier } });
 
-    info.count += 1;
-    info.lastAttempt = now;
-
-    if (info.count >= this.maxAttempts) {
-      info.blockedUntil = new Date(now.getTime() + this.blockDurationMs);
+    if (!record) {
+      record = this.attemptRepo.create({ identifier, attempts: 0, blockedUntil: null });
     }
 
-    this.attempts.set(identifier, info);
+    record.attempts += 1;
 
-    // Opcional: mensagens adicionais nas tentativas 3 e 4
-    if (info.count === 3 || info.count === 4) {
-      const remaining = this.maxAttempts - info.count;
-      throw new UnauthorizedException(
-        `Credenciais inválidas. Após mais ${remaining} tentativa(s), o login será bloqueado por 1 hora.`,
-      );
-    }
-
-    if (info.count >= this.maxAttempts) {
+    if (record.attempts >= this.maxAttempts) {
+      record.blockedUntil = new Date(Date.now() + this.blockDurationMs);
+      await this.attemptRepo.save(record);
       throw new UnauthorizedException(
         'Você excedeu o número máximo de tentativas. Tente novamente em 1 hora.',
       );
     }
 
-    return Promise.resolve();
+    await this.attemptRepo.save(record);
+
+    if (record.attempts === 3 || record.attempts === 4) {
+      const remaining = this.maxAttempts - record.attempts;
+      throw new UnauthorizedException(
+        `Credenciais inválidas. Após mais ${remaining} tentativa(s), o login será bloqueado por 1 hora.`,
+      );
+    }
   }
 
   async resetAttempts(identifier: string): Promise<void> {
-    this.attempts.delete(identifier);
-    return Promise.resolve();
+    await this.attemptRepo.delete({ identifier });
   }
 }

@@ -45,9 +45,18 @@ export class InstanceService {
     dbId: string,
     updates: Partial<UpdateInstanceDto>,
   ): Promise<ResponseInstanceDto> {
-    const instance = await this.findOneById(dbId);
-    Object.assign(instance, updates);
+    const instance = await this.instanceRepo.findOneBy({ dbId });
+    if (!instance) throw new NotFoundException('Instância não encontrada');
+
+    if (updates.name !== undefined) instance.name = updates.name;
+    if (updates.dbName !== undefined) instance.dbName = updates.dbName;
+    if (updates.dbHost !== undefined) instance.dbHost = updates.dbHost;
+    if (updates.maxCompanies !== undefined) instance.maxCompanies = updates.maxCompanies;
+    if (updates.maxUsers !== undefined) instance.maxUsers = updates.maxUsers;
+    if (updates.isActive !== undefined) instance.isActive = updates.isActive;
+
     const updatedInstance = await this.instanceRepo.save(instance);
+
     // se a instancia esta inativa, deve inativar todos os usuarios associados
     if (updatedInstance.isActive === false) {
       await this.userInstanceRepo.update(

@@ -9,6 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RefreshTokenEntity } from './refresh-token/refresh-token.entity';
 import { RefreshTokenService } from './refresh-token/refresh-token.service';
 import { LoginAttemptService } from './login-attempt/login-attempt.service';
+import { LoginAttemptEntity } from './login-attempt/login-attempt.entity';
 import { BlacklistModule } from './black-list/black-list.module';
 import { PasswordService } from './password/password.service';
 import { UserModule } from 'src/user-domain/user/user.module';
@@ -31,6 +32,7 @@ import { TenantModule } from 'src/tenant/tenant.module';
       RefreshTokenEntity,
       UserInstanceEntity,
       ResetPasswordEntity,
+      LoginAttemptEntity,
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -39,7 +41,7 @@ import { TenantModule } from 'src/tenant/tenant.module';
         const secret = config.get<string>('JWT_SECRET');
         return {
           global: true,
-          secret: secret || 'SePrecisouDissoAquiTaErrado',
+          secret: secret,
           signOptions: { expiresIn: '60m' },
         };
       },

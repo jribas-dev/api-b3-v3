@@ -142,6 +142,14 @@ Arquivos Handlebars (`.hbs`) em `src/infra/aws-ses/sender/layouts/`. O `nest-cli
 - **Banco do tenant:** `synchronize: false` sempre — schema governado por scripts versionados (ver `sql-files`).
 - Não há arquivos de migration; alterações em produção exigem migrations explícitas.
 
+### Schema Completo do Banco do Tenant
+
+O esquema completo do banco de dados do tenant (253 tabelas, versão 2.38, MySQL 8.0) está documentado em:
+
+**[`agent_docs/tenant_schema.md`](agent_docs/tenant_schema.md)**
+
+O documento cobre: definições SQL das tabelas-chave, catálogo resumido de todas as tabelas organizadas por domínio (vendas, produtos, estoque, financeiro, fiscal, etc.), diagrama de relacionamentos do módulo `b3vendas`, funções/procedures SQL e contagem de objetos.
+
 ---
 
 ## Variáveis de Ambiente

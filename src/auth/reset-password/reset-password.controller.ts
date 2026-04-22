@@ -7,6 +7,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ResetPasswordService } from './reset-password.service';
 
 @Controller('auth/reset-password')
@@ -15,6 +16,7 @@ export class ResetPasswordController {
 
   @Post()
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   async passwordReset(@Body() body: { email: string }) {
     await this.resetPasswordService.requestPasswordReset(body.email);
   }
@@ -41,6 +43,7 @@ export class ResetPasswordController {
 
   @Post('update')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   async updatePassword(
     @Body()
     body: {

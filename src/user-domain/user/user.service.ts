@@ -78,24 +78,17 @@ export class UserService {
     userId: string,
     updates: Partial<UpdateUserDto>,
   ): Promise<ResponseUserDto> {
-    const user = await this.findOneById(userId);
+    const user = await this.userRepo.findOneBy({ userId });
     if (!user) {
       throw new NotFoundException('Usuário não encontrado');
     }
-    if (updates.password) {
-      updates.password = await this.passwordService.hashPassword(
-        updates.password,
-      );
+    if (updates.name !== undefined) user.name = updates.name;
+    if (updates.email !== undefined) user.email = updates.email;
+    if (updates.phone !== undefined) user.phone = updates.phone;
+    if (updates.password !== undefined) {
+      user.password = await this.passwordService.hashPassword(updates.password);
     }
-    Object.assign(user, updates);
     const updatedUser = await this.userRepo.save(user);
-    // Se o usuario foi alterado para inativo, fazer inativação de todas as instâncias associadas
-    if (updatedUser.isActive === false) {
-      await this.userInstanceRepo.update(
-        { userId: updatedUser.userId },
-        { isActive: false },
-      );
-    }
     return plainToInstance(ResponseUserDto, updatedUser);
   }
 

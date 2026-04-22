@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -9,6 +10,8 @@ async function bootstrap() {
   const port = config.get<number>('APP_PORT') || 3000;
   const appName = config.get<string>('APP_NAME') as string;
   // const enviroment = config.get<string>('NODE_ENV') as string;
+
+  app.use(helmet());
 
   app.useGlobalPipes(
     new ValidationPipe({

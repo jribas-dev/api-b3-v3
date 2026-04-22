@@ -1,4 +1,5 @@
 import { SESv2Client } from '@aws-sdk/client-sesv2';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { ConfigService } from '@nestjs/config';
 
 export const SES_CLIENT = 'SES_CLIENT';
@@ -16,6 +17,7 @@ export const SesClientFactory = {
         accessKeyId: aKeyId,
         secretAccessKey: sKeyId,
       },
+      requestHandler: new NodeHttpHandler({ requestTimeout: 10_000 }),
     });
   },
   inject: [ConfigService],

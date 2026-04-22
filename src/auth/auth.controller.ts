@@ -13,6 +13,9 @@ import { LoginAttemptService } from './login-attempt/login-attempt.service';
 import { Request } from 'express';
 import { JwtGuard } from './guards/jwt.guard';
 import { UserInstanceGuard } from './guards/user-instance.guard';
+import { LoginDto } from './dto/login.dto';
+import { SelectInstanceDto } from './dto/select-instance.dto';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
@@ -25,7 +28,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(
     @Req() req: Request,
-    @Body() loginDto: { email: string; password: string },
+    @Body() loginDto: LoginDto,
   ) {
     const clientFingerprint = this.loginAttemptService.getIdentifier(req);
     await this.loginAttemptService.shouldBlock(clientFingerprint);
@@ -42,16 +45,12 @@ export class AuthController {
 
   @Post('instance')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @UseGuards(JwtGuard)
   async selectInstance(
     @Req() req: Request & { user: { isRoot: boolean; userId: string } },
-    @Body() inputDto: { dbId: string },
+    @Body() inputDto: SelectInstanceDto,
   ) {
-    if (!req.user.userId || !inputDto.dbId) {
-      throw new BadRequestException(
-        'ID do usuário ou ID da instância não fornecidos.',
-      );
-    }
     const validUser = await this.authService.validateUserInstance(
       req.user.userId,
       inputDto.dbId,

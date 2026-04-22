@@ -83,6 +83,31 @@ export class AwsS3Controller {
     return uploadResult;
   }
 
+  @Post('uploadfile/private')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 1024 * 1024 * 150, // 150MB
+      },
+    }),
+  )
+  async uploadFilePrivate(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: ActionsFileObjectDto,
+  ) {
+    if (!file) {
+      throw new BadRequestException('File in a form-data is required');
+    }
+    if (!dto.folderName) {
+      throw new BadRequestException('folderName is required');
+    }
+    if (!dto.fileName) {
+      throw new BadRequestException('fileName is required');
+    }
+    const fullKey = join(dto.folderName, dto.fileName).replace(/\\/g, '/');
+    return this.awsS3Service.uploadAwsS3Private(file, fullKey, dto.bucket);
+  }
+
   @Delete('deletefile/local')
   async deleteFileLocal(@Body() dto: ActionsFileObjectDto) {
     const { folderName, fileName } = dto;

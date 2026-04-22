@@ -41,23 +41,32 @@ Lança `ForbiddenException` se o usuário não estiver vinculado a um vendedor n
 
 ## Tabelas e Relacionamentos
 
+> Esquema completo do banco do tenant (253 tabelas, versão 2.38) documentado em **[agent_docs/tenant_schema.md](../../../agent_docs/tenant_schema.md)**.
+
+Tabelas usadas por este módulo (seções relevantes no schema doc):
+
+| Tabela | Seção no schema | Papel |
+|---|---|---|
+| `cnt` | §2 Clientes e Contatos | Clientes, vendedores, empresas |
+| `operacoes` | §4 Operações Fiscais | Tipo de operação fiscal da venda |
+| `formapg` | §4 Operações Fiscais | Formas de pagamento |
+| `condpg` | §4 Operações Fiscais | Condições de pagamento |
+| `prd` | §5 Produtos | Catálogo de produtos |
+| `prdtab` / `prdtabvalor` | §5 Produtos | Tabelas e preços por cliente |
+| `prdimposto` | §5 Produtos | Produto × imposto × operação |
+| `impostos` | §5 Produtos | Regras de tributação (IPI, ST, ICMS) |
+| `venda` | §3 Vendas | Pedidos/vendas |
+| `vendaitem` | §3 Vendas | Itens do pedido |
+| `vendacaixa` | §3 Vendas | Pagamento da venda |
+| `usu` | §1 Core | Usuário do tenant (resolução de vendedor) |
+| `cfg` | §21 Configuração | Parâmetros dinâmicos (`VWEBOPERCOND`, `VERSAO_DB`) |
+
 ```
-cnt (clientes)
-  └── idtab → prdtabvalor (tabela de preços por cliente)
-
-operacoes
-  └── referenciada por: venda.idoper, prdimposto.idoperacao
-
-prd (produtos)
-  ├── prdimposto (produto × imposto × operação) → impostos
-  └── prdtabvalor (preços por tabela de cliente)
-
-venda
-  ├── vendaitem (itens do pedido) → prd
-  └── vendacaixa (pagamento) → formapg, condpg
-
-formapg (formas de pagamento)
-condpg (condições de pagamento)
+cnt (cliente) ──── cnt.idtab → prdtab → prdtabvalor (preço por tabela)
+operacoes ←── venda.idoper / prdimposto.idoperacao
+prd ──── prdimposto → impostos
+venda ──── vendaitem → prd
+      └─── vendacaixa → formapg / condpg
 ```
 
 ## Máquina de Estados da Venda (`venda.tipo`)
@@ -103,147 +112,23 @@ O preço unitário segue esta ordem de precedência:
 
 ## Entities
 
-### ClienteEntity — tabela `cnt`
+> Especificação completa das colunas (tipos, defaults, FKs) está em **[agent_docs/tenant_schema.md](../../../agent_docs/tenant_schema.md)** — seções §1–§5.
 
-| Campo | Tipo DB | Descrição |
-|---|---|---|
-| `id` | int unsigned PK | — |
-| `razao` | varchar(100) | Razão social (obrigatório) |
-| `fantasia` | varchar(60) | Nome fantasia |
-| `docfed` | varchar(20) | CNPJ/CPF |
-| `docest` | varchar(20) | Inscrição estadual |
-| `email` | varchar(120) | — |
-| `cep` | varchar(10) | — |
-| `endereco` | varchar(120) | — |
-| `nroend` | varchar(10) | Número do endereço |
-| `bairro` | varchar(60) | — |
-| `cidade` | varchar(60) | — |
-| `uf` | varchar(2) | Estado |
-| `fone` / `fone2` / `cel` | varchar(20) | Telefones |
-| `obsvenda` | varchar(255) | Observações para vendas |
-| `idoper` | int | Operação padrão do cliente (FK) |
-| `idvend` | int | Vendedor proprietário (isolamento tenant) |
-| `ativo` | boolean | Padrão true |
+Resumo das entities e suas tabelas:
 
-### OperacaoEntity — tabela `operacoes`
-
-| Campo | Tipo DB | Descrição |
-|---|---|---|
-| `id` | smallint unsigned PK | — |
-| `operacao` | varchar(60) | Nome da operação |
-| `saidaentrada` | enum `'0'`/`'1'` | Entrada/Saída (padrão `'1'`) |
-| `cfopnormal` | varchar(5) | CFOP padrão (ex: `5102`) |
-| `cfopst` | varchar(5) | CFOP com ST (ex: `5405`) |
-| `subtipo` | enum `N`/`T`/`B`/`G` | Normal/Tributo/Orçamento/Governo |
-| `idemp` | int | Empresa (null = compartilhada) |
-
-### ProdutoEntity — tabela `prd`
-
-| Campo | Tipo DB | Descrição |
-|---|---|---|
-| `id` | int PK | — |
-| `nome` | varchar(100) | — |
-| `custo` | decimal(12,3) | Preço de custo |
-| `venda` | decimal(12,3) | Preço de venda padrão |
-| `ativo` | boolean | — |
-
-### ImpostoEntity — tabela `impostos`
-
-| Campo | Tipo DB | Descrição |
-|---|---|---|
-| `id` | int PK | — |
-| `descricao` | varchar(60) | — |
-| `icmscst` | varchar(3) | CST do ICMS (padrão `'41'`) |
-| `icmsaliq` | decimal(8,4) | Alíquota ICMS |
-| `icmsredu` | decimal(8,4) | Redução ICMS |
-| `icmsiva` | decimal(8,4) | IVA para ST |
-| `ipicst` | varchar(3) | CST do IPI (padrão `'53'`) |
-| `ipialiq` | decimal(8,4) | Alíquota IPI |
-
-### ProdutoImpostoEntity — tabela `prdimposto` (junção)
-
-PK composta: `idprd` + `idoperacao` + `idimposto`. Liga produto à regra de imposto por operação.
-
-### ProdutoTabValorEntity — tabela `prdtabvalor`
-
-PK composta: `idtab` + `idprod`. Armazena preço (`decimal 12.3`) por tabela de cliente.
-
-### FormaPagamentoEntity — tabela `formapg`
-
-| Campo | Tipo DB | Descrição |
-|---|---|---|
-| `id` | smallint unsigned PK | — |
-| `nmforma` | varchar(60) | Nome da forma |
-| `operacao` | varchar(1) | `'I'` entrada / `'D'` débito |
-| `inativo` | boolean | — |
-
-### CondicaoPagamentoEntity — tabela `condpg`
-
-| Campo | Tipo DB | Descrição |
-|---|---|---|
-| `idcond` | smallint unsigned PK | — |
-| `nomecond` | varchar(80) | Nome da condição |
-| `parcelas` | smallint | Número de parcelas |
-| `inativo` | boolean | — |
-
-### VendaEntity — tabela `venda`
-
-| Campo | Tipo DB | Descrição |
-|---|---|---|
-| `id` | int unsigned PK | — |
-| `dthremissao` | datetime | Criação (auto) |
-| `idoper` | smallint unsigned | Operação fiscal (FK) |
-| `fiscal` | varchar(1) | `'F'` fiscal / `'E'` estimativa |
-| `tipo` | varchar(1) | Estado: `O`/`P`/`V` |
-| `subtipo` | enum `N`/`T`/`B`/`G` | Herdado da operação |
-| `vlrbruto` | decimal(16,3) | Soma bruta dos itens |
-| `acrescimo` | decimal(12,3) | Acréscimo |
-| `desconto` | decimal(12,3) | Desconto |
-| `frete` | decimal(12,3) | Frete |
-| `seguro` | decimal(12,3) | Seguro |
-| `outros` | decimal(12,3) | Outras despesas |
-| `deducoes` | decimal(12,3) | Deduções |
-| `st` | decimal(12,3) | ICMS-ST total |
-| `ipi` | decimal(12,3) | IPI total |
-| `vlrtotal` | decimal(16,3) | Total calculado |
-| `idcli` | int | Cliente (FK, nullable) |
-| `idvend` | int | Vendedor (isolamento tenant) |
-| `idemp` | int | Empresa (FK) |
-| `plataforma` | varchar(20) | Origem (ex: `"SALESFORCE"`) |
-| `processo` | varchar(20) | Processo origem (ex: `"B3PED.exe"`) |
-| `ultimousu` | int unsigned | Último usuário que editou |
-| `obsinter` | varchar(255) | Observação interna |
-
-### VendaCaixaEntity — tabela `vendacaixa`
-
-PK composta: `idvenda` + `idforma` + `seq`. Registra o pagamento da venda.
-
-| Campo | Descrição |
-|---|---|
-| `valor` | decimal(12,2) — valor pago |
-| `idcond` | condição de pagamento (FK) |
-| `operacao` | `'I'` ou `'D'` herdado da forma |
-| `baixado` | boolean, padrão true |
-
-### VendaItemEntity — tabela `vendaitem`
-
-PK composta: `idvenda` + `seq`.
-
-| Campo | Tipo DB | Descrição |
-|---|---|---|
-| `idprod` | int | Produto (FK) |
-| `qtde` | decimal(10,3) | Quantidade |
-| `custo` | decimal(12,3) | Custo no momento |
-| `unitario` | decimal(12,3) | Preço unitário |
-| `desconto` | decimal(10,2) | Desconto do item |
-| `acrescimo` | decimal(10,2) | Acréscimo do item |
-| `bruto` | decimal(12,2) | `qtde × unitario` |
-| `total` | decimal(12,2) | `bruto + acrescimo - desconto` |
-| `st` | decimal(12,3) | ICMS-ST do item |
-| `ipi` | decimal(12,3) | IPI do item |
-| `cfop` | varchar(5) | CFOP aplicado |
-| `vlrtab` | decimal(12,3) | Preço da tabela usado |
-| `obsprd` | varchar(60) | Observação do item |
+| Entity | Tabela | PK | Seção no schema |
+|---|---|---|---|
+| `ClienteEntity` | `cnt` | `id` int unsigned | §2 |
+| `OperacaoEntity` | `operacoes` | `id` smallint unsigned | §4 |
+| `ProdutoEntity` | `prd` | `id` int | §5 |
+| `ImpostoEntity` | `impostos` | `id` int | §5 |
+| `ProdutoImpostoEntity` | `prdimposto` | `idprd` + `idoperacao` | §5 |
+| `ProdutoTabValorEntity` | `prdtabvalor` | `idtab` + `idprod` | §5 |
+| `FormaPagamentoEntity` | `formapg` | `id` smallint unsigned | §4 |
+| `CondicaoPagamentoEntity` | `condpg` | `idcond` smallint unsigned | §4 |
+| `VendaEntity` | `venda` | `id` int unsigned | §3 |
+| `VendaCaixaEntity` | `vendacaixa` | `idvenda` + `idforma` + `seq` | §3 |
+| `VendaItemEntity` | `vendaitem` | `idvenda` + `seq` | §3 |
 
 ## Endpoints
 

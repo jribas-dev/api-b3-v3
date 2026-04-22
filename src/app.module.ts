@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { UserDomainModule } from './user-domain/user-domain.module';
 import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
@@ -11,11 +14,12 @@ import { configSchemaValidation } from './config.schema';
 
 @Module({
   imports: [
-    // Habilita leitura de variáveis do .env
     ConfigModule.forRoot({
-      isGlobal: true, // Disponível em toda a aplicação
+      isGlobal: true,
       validationSchema: configSchemaValidation,
     }),
+    ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60000, limit: 60 }]),
 
     // Conexão com banco principal (main_db)
     TypeOrmModule.forRootAsync({
@@ -38,6 +42,9 @@ import { configSchemaValidation } from './config.schema';
     B3vendasModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

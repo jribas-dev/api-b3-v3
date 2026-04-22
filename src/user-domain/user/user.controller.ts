@@ -17,6 +17,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RootGuard } from 'src/auth/guards/root.guard';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 @UseGuards(JwtGuard)
 @Controller('users')
@@ -24,6 +25,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
+  @UseGuards(AdminGuard)
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() userData: CreateUserDto) {
     const existingUser = await this.userService.findOneByEmail(userData.email);
