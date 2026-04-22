@@ -21,6 +21,7 @@ import { ResetPasswordService } from './reset-password/reset-password.service';
 import { AwsSenderModule } from 'src/infra/aws-ses/sender/sender.module';
 import { ResetPasswordController } from './reset-password/reset-password.controller';
 import { ResetPasswordEntity } from './reset-password/reset-password.entity';
+import { TenantModule } from 'src/tenant/tenant.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { ResetPasswordEntity } from './reset-password/reset-password.entity';
     UserInstanceModule,
     BlacklistModule,
     AwsSenderModule,
+    TenantModule,
   ],
   providers: [
     AuthService,

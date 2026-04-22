@@ -54,7 +54,10 @@ src/auth/
   │       ← { accessToken (JWT 30 min, payload: sub/email/isRoot), tokenType, expiresIn }
   │
   ├─ POST /auth/instance  { dbId }   [Authorization: Bearer <accessToken step-1>]
-  │       ↓  JwtGuard → valida UserInstance (userId + dbId) → emite token com escopo
+  │       ↓  JwtGuard → valida UserInstance (userId + dbId)
+  │       ↓  verifica VERSAO_DB do tenant ≥ MIN_TENANT_DB (env, default 2.38)
+  │       ↓  se versão insuficiente → 403 Forbidden (token NÃO emitido)
+  │       ↓  emite token com escopo
   │       ← { isActive, accessToken (JWT 180 min, payload completo), refreshToken, tokenType, expiresIn }
   │
   ├─ POST /auth/refresh  { refreshToken }
@@ -198,6 +201,7 @@ POST /auth/reset-password/update  { token, email, password }
 - **`UserService`** — busca usuário por e-mail, retorna hash da senha.
 - **`UserInstanceService`** — `findValid(userId, dbId)` para validar vínculo User↔Instance.
 - **`AwsSenderService`** — envia e-mail de reset via SES com template `TemplateType.PASSWORD_RESET`.
+- **`CfgService`** (TenantModule) — lê `VERSAO_DB` da tabela `cfg` do tenant para validação de versão mínima.
 
 ---
 
@@ -210,3 +214,4 @@ POST /auth/reset-password/update  { token, email, password }
 5. O refresh token é de uso único — sempre revogado após rotação.
 6. Tokens na blacklist são rejeitados na `JwtStrategy`, mesmo que a assinatura seja válida.
 7. Reset de senha expira em 1 hora; o registro é deletado após uso bem-sucedido.
+8. Na etapa 2, a versão do banco do tenant (`cfg.VERSAO_DB`) é verificada contra `MIN_TENANT_DB` (env, default `2.38`). Versão inferior → **403 Forbidden**, token não emitido. Se `VERSAO_DB` não existir na tabela `cfg`, o acesso é permitido (graceful degradation para tenants não migrados).

@@ -114,6 +114,7 @@ src/
 POST /auth/login     { email, password }        → JWT (30 min, sem escopo)
 POST /auth/instance  { dbId }                   → JWT (180 min) + refreshToken
                                                    payload inclui: instanceId, roleBack, roleFront
+                                                   ⚠ 403 se VERSAO_DB do tenant < MIN_TENANT_DB
 POST /auth/refresh   { refreshToken }           → rotação (novo par)
 POST /auth/logout                               → blacklist do JWT atual
 ```
@@ -149,7 +150,7 @@ Todas as variáveis obrigatórias são validadas na inicialização via Joi ([`s
 
 | Grupo | Variáveis |
 |---|---|
-| App | `APP_ENVIRONMENT`, `APP_NAME`, `APP_PORT` |
+| App | `APP_ENVIRONMENT`, `APP_NAME`, `APP_PORT`, `MIN_TENANT_DB` (default `2.38`) |
 | Database (principal + tenant) | `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE` |
 | JWT | `JWT_SECRET` |
 | AWS | `AWS_REGION`, `AWS_SDK_KEY`, `AWS_SDK_SECRET`, `S3_BUCKET_NAME`, `SES_FROM_EMAIL` |

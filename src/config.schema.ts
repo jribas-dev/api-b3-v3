@@ -18,4 +18,5 @@ export const configSchemaValidation = Joi.object({
   STATIC_URL: Joi.string(),
   FRONTEND_URL: Joi.string(),
   BACKEND_URL: Joi.string(),
+  MIN_TENANT_DB: Joi.string().default('2.38'),
 });

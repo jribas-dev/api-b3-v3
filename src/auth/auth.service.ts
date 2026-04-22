@@ -1,9 +1,12 @@
 import {
   Injectable,
   UnauthorizedException,
+  ForbiddenException,
   Inject,
   forwardRef,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { CfgService } from 'src/tenant/cfg.service';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user-domain/user/user.service';
 import { PasswordService } from './password/password.service';
@@ -28,6 +31,8 @@ export class AuthService {
     private readonly passwordService: PasswordService,
     private readonly loginAttemptService: LoginAttemptService,
     private readonly blacklistService: BlacklistService,
+    private readonly cfgService: CfgService,
+    private readonly configService: ConfigService,
   ) {}
 
   async validate(
@@ -71,7 +76,27 @@ export class AuthService {
     if (!userInstance) {
       throw new UnauthorizedException('Usuário ou instância inválidos');
     }
+
+    const minVersion = this.configService.get<string>('MIN_TENANT_DB', '2.38');
+    const cfg = await this.cfgService.find(dbId, 'VERSAO_DB');
+    if (cfg && this.compareVersions(cfg.valor, minVersion) < 0) {
+      throw new ForbiddenException(
+        `Versão do banco do tenant (${cfg.valor}) inferior à mínima exigida (${minVersion}).`,
+      );
+    }
+
     return userInstance;
+  }
+
+  private compareVersions(a: string, b: string): number {
+    const pa = a.split('.').map(Number);
+    const pb = b.split('.').map(Number);
+    const len = Math.max(pa.length, pb.length);
+    for (let i = 0; i < len; i++) {
+      const diff = (pa[i] ?? 0) - (pb[i] ?? 0);
+      if (diff !== 0) return diff;
+    }
+    return 0;
   }
 
   async login(user: UserEntity) {
