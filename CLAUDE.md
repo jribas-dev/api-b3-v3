@@ -45,9 +45,9 @@ REST API em **NestJS 11 / Node.js 22 / TypeScript** com três responsabilidades 
 │  ┌────────────────────────────────────────────────────┐  │
 │  │  Módulos de domínio (banco do tenant)              │  │
 │  │  ┌───────────┐  ┌───────────┐  ┌──────────────┐    │  │
-│  │  │ b3vendas  │  │  b3dash*  │  │ b3financeiro*│    │  │
+│  │  │ b3vendas  │  │  b3dash   │  │ b3financeiro*│    │  │
 │  │  └───────────┘  └───────────┘  └──────────────┘    │  │
-│  │  (* — planejados)                                  │  │
+│  │  (* — planejado)                                   │  │
 │  └────────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -62,6 +62,7 @@ REST API em **NestJS 11 / Node.js 22 / TypeScript** com três responsabilidades 
 | [`user-domain`](src/user-domain/CLAUDE.md) | Agregador: `user`, `user-instance`, `user-pre`, `instance` | [src/user-domain/CLAUDE.md](src/user-domain/CLAUDE.md) |
 | [`tenant`](src/tenant/CLAUDE.md) | Factory + cache de DataSources por tenant; `CfgService` para parâmetros do tenant | [src/tenant/CLAUDE.md](src/tenant/CLAUDE.md) |
 | [`b3vendas`](src/b3vendas/CLAUDE.md) | Domínio de vendas: clientes, produtos, pedidos, impostos (IPI/ICMS-ST) | [src/b3vendas/CLAUDE.md](src/b3vendas/CLAUDE.md) |
+| [`b3dash`](src/b3dash/CLAUDE.md) | Dashboard multi-tenant (read-only): gráficos e grids de faturamento, financeiro e estoque | [src/b3dash/CLAUDE.md](src/b3dash/CLAUDE.md) |
 | [`infra`](src/infra/CLAUDE.md) | Agregador: `aws-s3`, `aws-ses`, `sql-files`, `sys-files` | [src/infra/CLAUDE.md](src/infra/CLAUDE.md) |
 
 ### Sub-módulos de `user-domain`
@@ -95,6 +96,7 @@ src/
 ├── user-domain/            # Usuários, tenants e vínculos
 ├── tenant/                 # Factory multi-tenant de DataSources
 ├── b3vendas/               # Domínio de vendas (tenant-scoped)
+├── b3dash/                 # Dashboard read-only (tenant-scoped, com cache 24h)
 └── infra/                  # Serviços transversais (S3, SES, arquivos)
 ```
 

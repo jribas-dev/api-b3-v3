@@ -10,6 +10,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { InfraModule } from './infra/infra.module';
 import { B3vendasModule } from './b3vendas/b3vendas.module';
+import { B3dashModule } from './b3dash/b3dash.module';
 import { configSchemaValidation } from './config.schema';
 
 @Module({
@@ -40,6 +41,7 @@ import { configSchemaValidation } from './config.schema';
     AuthModule,
     InfraModule,
     B3vendasModule,
+    B3dashModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
