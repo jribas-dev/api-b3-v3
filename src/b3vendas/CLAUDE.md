@@ -17,7 +17,8 @@ src/b3vendas/
 │   └── tax-calculator.service.ts  # Lógica pura de cálculo IPI/ST
 ├── formas-pagamento/           # Formas e condições de pagamento (formapg, condpg)
 ├── venda/                      # Pedidos/vendas (tabela venda)
-└── venda-item/                 # Itens do pedido (tabela vendaitem)
+├── venda-item/                 # Itens do pedido (tabela vendaitem)
+└── equipe/                     # Equipe de vendas (tabela cntequipe)
 ```
 
 > **Atenção:** As entities deste módulo usam IDs numéricos inteiros (legado), **não** CUID2 como nas demais entities da aplicação.
@@ -48,6 +49,7 @@ Tabelas usadas por este módulo (seções relevantes no schema doc):
 | Tabela | Seção no schema | Papel |
 |---|---|---|
 | `cnt` | §2 Clientes e Contatos | Clientes, vendedores, empresas |
+| `cntequipe` | §2 Clientes e Contatos | Relação líder (supervisor) × liderado (vendedor) |
 | `operacoes` | §4 Operações Fiscais | Tipo de operação fiscal da venda |
 | `formapg` | §4 Operações Fiscais | Formas de pagamento |
 | `condpg` | §4 Operações Fiscais | Condições de pagamento |
@@ -152,7 +154,35 @@ Resumo das entities e suas tabelas:
 | `POST` | `/b3vendas/pedidos/:id/fechar` | Fechar pedido com pagamento |
 | `POST` | `/b3vendas/pedidos/:id/itens` | Adicionar item ao pedido |
 | `DELETE` | `/b3vendas/pedidos/:id/itens/:seq` | Remover item do pedido |
+| `GET` | `/b3vendas/equipe` | Lista a equipe de vendas do usuário autenticado (ver seção Equipe) |
+
+## Equipe de Vendas (`/b3vendas/equipe`)
+
+Endpoint único `GET /b3vendas/equipe` que lista a equipe visível ao vendedor autenticado. O comportamento depende de `roleFront`:
+
+- **`SUPER`** (supervisor): retorna o próprio líder **e** todos os vendedores subordinados. Consulta via `UNION ALL`:
+  - `cnt` onde `id = vendId` — o próprio líder, com `liderado = 0`.
+  - `cntequipe INNER JOIN cnt ON c.id = e.idcntliderado` onde `e.idcntlider = vendId` — liderados, com `liderado = 1`.
+  - Resultado ordenado por `liderado ASC, razao ASC` (líder sempre primeiro; subordinados a seguir, em ordem alfabética).
+- **`SALER`** (vendedor): retorna uma única linha com os dados do próprio vendedor (`cnt` onde `id = vendId`), com `liderado = 0`.
+
+Qualquer outro `roleFront` recebe `403 Forbidden` — o `RolesFrontGuard` já filtra (`@RolesFront(SUPER, SALER)`), mas o service revalida defensivamente.
+
+**Shape da resposta (`ResponseEquipeDto[]`):**
+
+| Campo | Origem | Descrição |
+|---|---|---|
+| `id` | `cnt.id` | ID do vendedor |
+| `razao` | `cnt.razao` | Nome do vendedor |
+| `cel` | `cnt.cel` | Telefone celular |
+| `fax` | `cnt.fax` | Número de WhatsApp (campo legado `fax` reaproveitado) |
+| `liderado` | literal | `0` = linha do próprio vendedor autenticado (origem `cnt`); `1` = subordinado (origem `cntequipe`) |
+
+A tabela `cntequipe` tem chave composta `(idcntlider, idcntliderado)` — ambos apontando para `cnt.id` com `ON DELETE CASCADE`. Não há entity dedicada; o serviço usa `ds.query()` com parâmetros posicionais.
 
 ## Guards
 
-Todos os endpoints exigem `JwtGuard` + `UserInstanceGuard`. O `DELETE /clientes/:id` exige adicionalmente `RolesFrontGuard` com role `SUPER`.
+Todos os endpoints exigem `JwtGuard` + `UserInstanceGuard`. Endpoints com restrição de papel aplicam também `RolesFrontGuard`:
+
+- `DELETE /clientes/:id` — role `SUPER`.
+- `GET /equipe` — roles `SUPER` ou `SALER`.

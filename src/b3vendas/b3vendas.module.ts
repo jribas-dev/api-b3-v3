@@ -6,6 +6,7 @@ import { ProdutoModule } from './produto/produto.module';
 import { FormasPagamentoModule } from './formas-pagamento/formas-pagamento.module';
 import { VendaModule } from './venda/venda.module';
 import { VendaItemModule } from './venda-item/venda-item.module';
+import { EquipeModule } from './equipe/equipe.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { VendaItemModule } from './venda-item/venda-item.module';
     FormasPagamentoModule,
     VendaModule,
     VendaItemModule,
+    EquipeModule,
   ],
 })
 export class B3vendasModule {}
