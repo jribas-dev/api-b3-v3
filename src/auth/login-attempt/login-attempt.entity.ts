@@ -10,7 +10,7 @@ export class LoginAttemptEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 255, unique: true })
+  @Column({ length: 320, unique: true })
   identifier: string;
 
   @Column({ default: 0 })

@@ -14,8 +14,10 @@ export class LoginAttemptService {
     private readonly attemptRepo: Repository<LoginAttemptEntity>,
   ) {}
 
-  getIdentifier(req: Request): string {
-    return req.ip || req.connection.remoteAddress || 'unknown';
+  getIdentifier(req: Request, email?: string): string {
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const normalizedEmail = (email ?? '').trim().toLowerCase();
+    return `${ip}::${normalizedEmail}`;
   }
 
   async shouldBlock(identifier: string): Promise<void> {

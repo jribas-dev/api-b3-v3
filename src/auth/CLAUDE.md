@@ -114,14 +114,33 @@ Herda os campos acima e acrescenta:
 
 ## Proteção contra Força Bruta (`LoginAttemptService`)
 
-- Estado em memória (`Map<identifier, AttemptInfo>`) — não persiste entre reinicializações.
-- Identificador: `IP::User-Agent`.
+- Persistência em MySQL (tabela `login_attempts`, coluna `identifier` única, tamanho 320).
+- Identificador: `IP::email` (email normalizado — `trim()` + `toLowerCase()`).
+  - O IP é lido de `req.ip` (respeita `trust proxy` quando configurado) com fallback para `req.socket.remoteAddress`.
+  - O email vem do `LoginDto` da requisição (a tentativa em andamento), **não** do usuário autenticado.
 - Limite: **5 tentativas** antes do bloqueio.
 - Duração do bloqueio: **1 hora**.
 - Avisos progressivos nas tentativas 3 e 4.
-- Tentativa bem-sucedida zera o contador.
+- Tentativa bem-sucedida zera o contador (apenas do par IP+email correspondente).
 
-> **Limitação conhecida:** o estado é volátil. Em múltiplas instâncias ou após restart, o contador é zerado. Para ambientes de produção com escala horizontal, substituir por solução persistente (Redis).
+### Racional do identificador composto
+
+Usar apenas o IP causa falsos positivos em cenários comuns: redes corporativas, Wi-Fi público, proxies, NAT de operadora. Um atacante contra a conta `vitima@x.com` bloquearia todos os usuários que compartilham o mesmo IP. O identificador `IP::email`:
+
+- Isola a tentativa ao par **origem × alvo**: diferentes usuários na mesma rede permanecem livres para logar.
+- Mantém o bloqueio eficaz: ataques repetidos contra a mesma conta a partir da mesma origem são contidos em 5 tentativas.
+- Não protege sozinho contra ataques distribuídos ou de enumeração (varredura de emails a partir do mesmo IP) — essas defesas dependem de outras camadas (WAF, `Throttle` no controller, monitoramento).
+
+### API
+
+```ts
+getIdentifier(req: Request, email?: string): string  // retorna "ip::email"
+shouldBlock(identifier): Promise<void>               // lança 401 se bloqueado
+registerFailure(identifier): Promise<void>           // incrementa; bloqueia em 5
+resetAttempts(identifier): Promise<void>             // chamado em login bem-sucedido
+```
+
+> **Observação operacional:** o `LoginAttemptService` não expõe rotina de limpeza de registros expirados. Registros com `blockedUntil` no passado continuam na tabela; reutilizando o mesmo par IP+email, o `shouldBlock` permite passar e `registerFailure` zera/atualiza o contador ao exceder. Considerar job agendado para purgar registros antigos se a tabela crescer.
 
 ---
 

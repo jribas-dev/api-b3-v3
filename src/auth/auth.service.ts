@@ -40,7 +40,7 @@ export class AuthService {
     password: string,
     req: Request,
   ): Promise<UserEntity> {
-    const identifier = this.loginAttemptService.getIdentifier(req);
+    const identifier = this.loginAttemptService.getIdentifier(req, email);
 
     // Verifica se a origem está bloqueada
     await this.loginAttemptService.shouldBlock(identifier);
