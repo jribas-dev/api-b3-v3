@@ -81,8 +81,8 @@ src/
 │   ├── auth.controller.ts     # POST /auth/login, /instance, /refresh, /logout
 │   ├── auth.service.ts        # Lógica de login, instância, refresh, logout
 │   ├── jwt/                   # Estratégia Passport JWT + interface do payload
-│   ├── guards/                # JwtGuard, RolesBackGuard, RolesFrontGuard, RootGuard, UserInstanceGuard
-│   ├── decorators/            # @RolesBack(), @RolesFront(), @AllowRoot()
+│   ├── guards/                # JwtGuard, UserInstanceGuard, AdminGuard, RolesBackGuard, RolesFrontGuard, RootGuard
+│   ├── decorators/            # @RolesBack(), @RolesFront()
 │   ├── black-list/            # Entidade e serviço de blacklist de tokens
 │   ├── refresh-token/         # Entidade e serviço de refresh tokens rotativos
 │   ├── password/              # Hash e comparação de senhas (bcrypt)
@@ -196,10 +196,14 @@ Guards: JwtGuard, UserInstanceGuard
 
 ```
 JwtGuard               → valida assinatura JWT + verifica blacklist
-  └── UserInstanceGuard  → exige campo dbId no payload (token pós-instância)
-        ├── RootGuard          → exige isRoot === true
-        └── RolesBackGuard     → exige roleBack ∈ roles permitidos (ou isRoot + @AllowRoot())
+  ├── UserInstanceGuard  → exige campo dbId no payload (token pós-instância)
+  │     ├── AdminGuard         → isRoot OU roleBack ∈ {admin, supervisor} OU roleFront === supervisor
+  │     ├── RolesBackGuard     → dinâmico: roleBack ∈ roles declaradas em @RolesBack(...)
+  │     └── RolesFrontGuard    → dinâmico: roleFront ∈ roles declaradas em @RolesFront(...)
+  └── RootGuard          → exige isRoot === true (root-exclusivo, independe de instance)
 ```
+
+Os guards são independentes entre si; cada um testa individualmente uma condição. Combine-os via `@UseGuards(...)` conforme a regra do endpoint.
 
 ---
 
@@ -226,10 +230,11 @@ JwtGuard               → valida assinatura JWT + verifica blacklist
 ### Decorators disponíveis
 
 ```typescript
-@RolesBack(RoleBack.ADMIN, RoleBack.SUPER)  // Restringe por roleBack
-@RolesFront(RoleFront.SUPERVISOR)           // Restringe por roleFront
-@AllowRoot()                                // Permite superadmin mesmo sem o roleBack exigido
+@RolesBack(RoleBack.ADMIN, RoleBack.SUPER)  // Restringe por roleBack (usado com RolesBackGuard)
+@RolesFront(RoleFront.SUPER)                // Restringe por roleFront (usado com RolesFrontGuard)
 ```
+
+> Para rotas que devem permitir "root global OU administradores do tenant", use `AdminGuard` em vez de combinar decorators com bypass de root.
 
 ---
 
@@ -282,7 +287,7 @@ JwtGuard               → valida assinatura JWT + verifica blacklist
 
 | Método | Rota | Guards | Descrição |
 |--------|------|--------|-----------|
-| `POST` | `/user-pre/create` | JwtGuard, RolesBackGuard (admin/supervisor) | Cria convite de usuário com token |
+| `POST` | `/user-pre/create` | JwtGuard, AdminGuard | Cria convite de usuário com token |
 | `GET`  | `/user-pre/check` | — | Valida token + e-mail do convite |
 | `POST` | `/user-pre/confirm` | — | Finaliza o cadastro via convite |
 

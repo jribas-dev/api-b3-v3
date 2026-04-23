@@ -8,10 +8,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { RolesBack } from 'src/auth/decorators/roles-back.decorator';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
-import { AllowRoot, RolesBackGuard } from 'src/auth/guards/roles-back.guard';
-import { RoleBack } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { UserPreService } from './user-pre.service';
 import { CreateUserPreDto } from './dto/create-user-pre.dto';
 import { CheckUserPreDto } from './dto/check-user-pre.dto';
@@ -21,9 +19,7 @@ import { ConfirmUserPreDto } from './dto/confirm-user-pre.dto';
 export class UserPreController {
   constructor(private readonly userPreService: UserPreService) {}
 
-  @UseGuards(JwtGuard, RolesBackGuard)
-  @RolesBack(RoleBack.ADMIN, RoleBack.SUPER)
-  @AllowRoot()
+  @UseGuards(JwtGuard, AdminGuard)
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() data: CreateUserPreDto) {

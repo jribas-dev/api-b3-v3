@@ -51,7 +51,7 @@ Espelho de `user_instances` para o período de pré-cadastro.
 
 | Método | Rota | Auth | Descrição |
 |---|---|---|---|
-| `POST` | `/user-pre/create` | JwtGuard + RoleBack(ADMIN, SUPER) ou Root | Cria convite |
+| `POST` | `/user-pre/create` | JwtGuard + AdminGuard | Cria convite |
 | `GET` | `/user-pre/check` | Público | Valida token antes de exibir o formulário |
 | `POST` | `/user-pre/confirm` | Público | Conclui cadastro |
 

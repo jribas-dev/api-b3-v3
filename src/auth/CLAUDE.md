@@ -19,8 +19,9 @@ src/auth/
 ├── guards/
 │   ├── jwt.guard.ts             # Valida assinatura + blacklist
 │   ├── user-instance.guard.ts   # Exige dbId no payload (token de instância)
-│   ├── roles-back.guard.ts      # RBAC backend; @AllowRoot() permite superadmin
-│   ├── roles-front.guard.ts     # RBAC frontend
+│   ├── admin.guard.ts           # isRoot OU roleBack ∈ {admin, supervisor} OU roleFront = supervisor
+│   ├── roles-back.guard.ts      # RBAC backend dinâmico via @RolesBack(...)
+│   ├── roles-front.guard.ts     # RBAC frontend dinâmico via @RolesFront(...)
 │   └── root.guard.ts            # Exclusivo ao superadmin (isRoot === true)
 ├── decorators/
 │   ├── roles-back.decorator.ts  # @RolesBack(...roles)
@@ -96,18 +97,41 @@ Herda os campos acima e acrescenta:
 
 ## Guards — Regras de Aplicação
 
+Existem cinco guards canônicos mais o `RootGuard` (caso especial para operações root-exclusivas):
+
 | Guard               | Pré-requisito no token | Comportamento ao falhar  |
 |---------------------|------------------------|--------------------------|
-| `JwtGuard`          | Assinatura válida + não na blacklist | 401 Unauthorized |
-| `UserInstanceGuard` | `dbId` presente (token etapa 2) | 403 Forbidden |
-| `RolesBackGuard`    | `roleBack` ∈ roles declaradas OU `isRoot && @AllowRoot()` | 403 Forbidden |
-| `RolesFrontGuard`   | `roleFront` ∈ roles declaradas | 403 Forbidden |
-| `RootGuard`         | `isRoot === true` | 403 Forbidden |
+| `JwtGuard`          | Assinatura válida + não na blacklist (etapa 1 ou 2) | 401 Unauthorized |
+| `UserInstanceGuard` | `dbId` presente (token etapa 2 — usuário selecionou tenant) | 403 Forbidden |
+| `AdminGuard`        | `isRoot === true` OU `roleBack ∈ {admin, supervisor}` OU `roleFront === supervisor` | 403 Forbidden |
+| `RolesBackGuard`    | `roleBack` ∈ roles declaradas via `@RolesBack(...)` (dinâmico) | 403 Forbidden |
+| `RolesFrontGuard`   | `roleFront` ∈ roles declaradas via `@RolesFront(...)` (dinâmico) | 403 Forbidden |
+| `RootGuard`         | `isRoot === true` (restrição máxima) | 403 Forbidden |
+
+### Uso canônico de cada guard
+
+- **`JwtGuard`** — aplicar a toda rota autenticada (etapa 1 ou 2).
+- **`UserInstanceGuard`** — somar ao `JwtGuard` quando a rota exige tenant selecionado (acesso a `dbId`/roles).
+- **`AdminGuard`** — rotas administrativas que aceitam root global **ou** administradores do tenant (admin/supervisor backend, supervisor frontend). Substitui o padrão antigo de `@RolesBack(ADMIN, SUPER) + @AllowRoot()`.
+- **`RolesBackGuard`** + `@RolesBack(...)` — testar dinamicamente se `roleBack` do usuário pertence ao conjunto declarado. **Não** faz bypass para root; se a rota deve permitir root, use `AdminGuard` ou inclua-o em guards compostos.
+- **`RolesFrontGuard`** + `@RolesFront(...)` — idem para `roleFront`.
+- **`RootGuard`** — rotas restritas exclusivamente ao superadmin global (CRUD de instances, user-instances, sys-files, sql-files etc.).
 
 **Ordem típica em endpoints protegidos:**
 ```ts
+// Rota administrativa do tenant (aceita root)
+@UseGuards(JwtGuard, AdminGuard)
+
+// Rota com RBAC dinâmico por roleBack
 @UseGuards(JwtGuard, UserInstanceGuard, RolesBackGuard)
-@RolesBack(RoleBack.ADMIN, RoleBack.MANAGER)
+@RolesBack(RoleBack.ADMIN, RoleBack.SUPER)
+
+// Rota com RBAC dinâmico por roleFront
+@UseGuards(JwtGuard, UserInstanceGuard, RolesFrontGuard)
+@RolesFront(RoleFront.SUPER, RoleFront.SALER)
+
+// Rota root-exclusiva
+@UseGuards(JwtGuard, RootGuard)
 ```
 
 ---
@@ -229,7 +253,7 @@ POST /auth/reset-password/update  { token, email, password }
 1. Credenciais inválidas **nunca** informam qual campo está errado (mensagem genérica `'Credenciais inválidas'`).
 2. O token de etapa 1 não concede acesso a recursos de tenant — apenas à rota `/auth/instance`.
 3. Somente tokens de etapa 2 (`dbId` presente) passam pelo `UserInstanceGuard`.
-4. `isRoot` no payload concede bypass em guards que declaram `@AllowRoot()`; `RootGuard` exige exclusivamente `isRoot === true`.
+4. `isRoot` no payload concede acesso em `AdminGuard` e `RootGuard`; `RolesBackGuard` e `RolesFrontGuard` **não** aplicam bypass automático para root — rotas que devem permitir root + role específica devem compor `AdminGuard` ou declarar o root como caso separado.
 5. O refresh token é de uso único — sempre revogado após rotação.
 6. Tokens na blacklist são rejeitados na `JwtStrategy`, mesmo que a assinatura seja válida.
 7. Reset de senha expira em 1 hora; o registro é deletado após uso bem-sucedido.

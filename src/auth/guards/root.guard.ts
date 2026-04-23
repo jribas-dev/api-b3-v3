@@ -17,6 +17,6 @@ export class RootGuard implements CanActivate {
       return true;
     }
 
-    throw new ForbiddenException('Acesso restrito ao administrador');
+    throw new ForbiddenException('Acesso restrito ao usuário root');
   }
 }

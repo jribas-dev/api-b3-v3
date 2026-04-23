@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_FRONT_KEY } from '../decorators/roles-front.decorator';
 import { RoleFront } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
@@ -16,8 +21,15 @@ export class RolesFrontGuard implements CanActivate {
 
     const request = ctx
       .switchToHttp()
-      .getRequest<Request & { user: { roleFront: RoleFront } }>();
+      .getRequest<Request & { user: { roleFront?: RoleFront } }>();
     const user = request.user;
-    return required.includes(user.roleFront);
+
+    if (user?.roleFront && required.includes(user.roleFront)) {
+      return true;
+    }
+
+    throw new ForbiddenException(
+      'Acesso restrito: roleFront insuficiente para o recurso solicitado',
+    );
   }
 }
