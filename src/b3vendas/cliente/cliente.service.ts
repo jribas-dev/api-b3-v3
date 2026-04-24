@@ -48,15 +48,17 @@ export class ClienteService {
       .leftJoin('cntclasses', 'cc', 'cc.idcnt = a.id')
       .leftJoin('cntclass', 'cl', 'cl.id = cc.idclass')
       .where('a.ativo')
-      .andWhere('a.idvend = :vendId', { vendId })
       .andWhere('cl.ativo')
+      .andWhere('a.idvende = :vendId', { vendId })
       .andWhere(
         new Brackets((qb) =>
           qb
             .where('UPPER(a.razao) LIKE :like', { like })
-            .orWhere('a.docfed LIKE :like', { like }),
+            .orWhere('a.docfed LIKE :like', { like })
+            .orWhere('a.id LIKE :like', { like }),
         ),
       )
+      .orWhere('a.id = 99')
       .distinct(true)
       .orderBy('a.razao', 'ASC')
       .limit(50)
@@ -85,7 +87,7 @@ export class ClienteService {
     const ds = await this.tenantService.getDataSource(dbId);
     const repo = ds.getRepository(ClienteEntity);
 
-    const entity = repo.create({ ...dto, idvend: vendId, ativo: true });
+    const entity = repo.create({ ...dto, idvende: vendId, ativo: true });
     const saved = await repo.save(entity);
     return plainToInstance(ResponseClienteInfoDto, saved);
   }
@@ -136,7 +138,14 @@ export class ClienteService {
     id: number,
   ): Promise<ClienteEntity> {
     const ds = await this.tenantService.getDataSource(dbId);
-    const cliente = await ds.getRepository(ClienteEntity).findOneBy({ id });
+    const cliente = await ds
+      .getRepository(ClienteEntity)
+      .createQueryBuilder('c')
+      .addSelect('format_docfed(c.docfed)', 'c_docformatado')
+      .where('c.id = :id', { id })
+      .andWhere('c.ativo')
+      .getOne();
+    // const cliente = await ds.getRepository(ClienteEntity).findOneBy({ id });
     if (!cliente) throw new NotFoundException(`Cliente ${id} não encontrado`);
     return cliente;
   }
@@ -148,7 +157,7 @@ export class ClienteService {
   ): Promise<ClienteEntity> {
     const { vendId } = await this.sellerContextService.resolve(dbId, userId);
     const cliente = await this.findOneOrFail(dbId, id);
-    if (cliente.idvend !== vendId) {
+    if (cliente.idvende !== vendId) {
       throw new ForbiddenException(
         'Somente o vendedor vinculado ao cliente pode alterá-lo',
       );

@@ -12,7 +12,13 @@ export class ResponseClienteInfoDto {
   docfed: string | null;
 
   @Expose()
+  docformatado: string | null;
+
+  @Expose()
   fone: string | null;
+
+  @Expose()
+  cel: string | null;
 
   @Expose()
   endereco: string | null;
@@ -34,4 +40,13 @@ export class ResponseClienteInfoDto {
 
   @Expose()
   idoper: number | null;
+
+  @Expose()
+  email: string | null;
+
+  @Expose()
+  emailnfe: string | null;
+
+  @Expose()
+  emailcob: string | null;
 }

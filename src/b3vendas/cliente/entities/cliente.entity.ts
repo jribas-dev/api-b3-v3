@@ -14,11 +14,20 @@ export class ClienteEntity {
   @Column({ type: 'varchar', length: 20, nullable: true })
   docfed: string | null;
 
+  @Column({ select: false, nullable: true, insert: false, update: false })
+  docformatado?: string;
+
   @Column({ type: 'varchar', length: 20, nullable: true })
   docest: string | null;
 
   @Column({ type: 'varchar', length: 120, nullable: true })
   email: string | null;
+
+  @Column({ type: 'varchar', length: 120, nullable: true })
+  emailnfe: string | null;
+
+  @Column({ type: 'varchar', length: 120, nullable: true })
+  emailcob: string | null;
 
   @Column({ type: 'varchar', length: 120, nullable: true })
   site: string | null;
@@ -57,7 +66,7 @@ export class ClienteEntity {
   idoper: number | null;
 
   @Column({ type: 'int', unsigned: true, nullable: true })
-  idvend: number | null;
+  idvende: number | null;
 
   @Column({ type: 'bit', width: 1, default: () => "b'1'" })
   ativo: boolean;
