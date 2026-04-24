@@ -1,14 +1,9 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { In } from 'typeorm';
 import { SellerContextService } from 'src/b3vendas/shared/seller-context.service';
 import { TenantService } from 'src/tenant/tenant.service';
 import { CfgService } from 'src/tenant/cfg.service';
-import { EmpService } from 'src/tenant/emp.service';
 import { OperacaoEntity } from './entities/operacao.entity';
 import { ResponseOperacaoDto } from './dto/response-operacao.dto';
 
@@ -18,7 +13,6 @@ export class OperacaoService {
     private readonly tenantService: TenantService,
     private readonly sellerContextService: SellerContextService,
     private readonly cfgService: CfgService,
-    private readonly empService: EmpService,
   ) {}
 
   async listarPermitidas(
@@ -26,12 +20,6 @@ export class OperacaoService {
     userId: string,
     idemp: number,
   ): Promise<ResponseOperacaoDto[]> {
-    const emitentes = await this.empService.listEmitentes(dbId, userId);
-    const authorizedIds = emitentes.map((e) => e.id);
-    if (!authorizedIds.includes(idemp)) {
-      throw new ForbiddenException('Empresa não autorizada para este usuário');
-    }
-
     await this.sellerContextService.resolve(dbId, userId);
     const { valor: operFilter } = await this.cfgService.get(
       dbId,
