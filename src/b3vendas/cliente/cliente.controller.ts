@@ -35,6 +35,12 @@ export class ClienteController {
     return this.clienteService.buscar(req.user.dbId, req.user.userId, q ?? '');
   }
 
+  @Get('rede-sp')
+  @RolesFront(RoleFront.SUPER, RoleFront.SALER)
+  async redeSp(@Request() req: { user: { userId: string; dbId: string } }) {
+    return this.clienteService.redeSp(req.user.dbId, req.user.userId);
+  }
+
   @Get(':id')
   async info(
     @Request() req: { user: { userId: string; dbId: string } },

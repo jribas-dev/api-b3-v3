@@ -13,6 +13,7 @@ import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { ResponseClienteBuscaDto } from './dto/response-cliente-busca.dto';
 import { ResponseClienteInfoDto } from './dto/response-cliente-info.dto';
+import { ResponseClienteRedeSpDto } from './dto/response-cliente-rede-sp.dto';
 
 function padLeft(value: number, length: number): string {
   return String(value).padStart(length, '0');
@@ -121,6 +122,35 @@ export class ClienteService {
     if (dto.idoper !== undefined) cliente.idoper = dto.idoper;
     const saved = await repo.save(cliente);
     return plainToInstance(ResponseClienteInfoDto, saved);
+  }
+
+  async redeSp(
+    dbId: string,
+    userId: string,
+  ): Promise<ResponseClienteRedeSpDto[]> {
+    const { vendId } = await this.sellerContextService.resolve(dbId, userId);
+    const ds = await this.tenantService.getDataSource(dbId);
+    const rows = await ds.query<
+      {
+        id: number;
+        nome: string;
+        docfed: string | null;
+        email: string | null;
+        fone: string | null;
+        cel: string | null;
+        cidade: string | null;
+      }[]
+    >(
+      `SELECT id, COALESCE(fantasia, razao) AS nome, format_docfed(docfed) AS docfed,
+              email, fone, cel, cidade
+         FROM cnt
+        WHERE (uf = 'SP' OR uf IS NULL)
+          AND idtab IS NOT NULL
+          AND idvende = ?
+          AND ativo`,
+      [vendId],
+    );
+    return rows.map((r) => plainToInstance(ResponseClienteRedeSpDto, r));
   }
 
   async remove(dbId: string, id: number): Promise<{ id: number }> {
