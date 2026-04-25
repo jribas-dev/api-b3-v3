@@ -48,7 +48,7 @@ export class ClienteController {
     @Query('idOper', ParseIntPipe) idOper: number,
     @Query('idCli', ParseIntPipe) idCli: number,
   ) {
-    return await this.clienteService.tabela(req.user.dbId, idOper, idCli);
+    return this.clienteService.tabela(req.user.dbId, idOper, idCli);
   }
 
   @Get(':id')
