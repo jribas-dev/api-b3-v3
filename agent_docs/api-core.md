@@ -20,7 +20,7 @@
 - [Instâncias (Tenants)](#instâncias-tenants)
 - [Vínculos Usuário-Instância](#vínculos-usuário-instância)
 - [Pré-cadastro (Convite)](#pré-cadastro-convite)
-- [Tenant — Emitentes](#tenant--emitentes)
+- [Tenant](#tenant)
 - [Infra — AWS S3](#infra--aws-s3)
 - [Infra — AWS SES](#infra--aws-ses)
 - [Infra — SQL Files](#infra--sql-files)
@@ -647,7 +647,7 @@ Finaliza o cadastro: cria o usuário definitivo, cria os vínculos de instância
 
 ---
 
-## Tenant — Emitentes
+## Tenant
 
 ### `GET /tenant/emitentes`
 
@@ -666,6 +666,35 @@ Lista as empresas (emitentes) disponíveis para o tenant do usuário autenticado
   }
 ]
 ```
+
+---
+
+### `GET /tenant/cfg`
+
+Retorna o valor e a descrição de um parâmetro de configuração da tabela `cfg` do banco do tenant autenticado.
+
+**Auth:** `JwtGuard` + `UserInstanceGuard` (token etapa 2)
+
+**Query params:**
+
+| Param | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `param` | string | ✅ | Nome do parâmetro (chave na tabela `cfg`) |
+
+**Resposta `200`:**
+
+```jsonc
+{
+  "valor": "SELECT ...",                       // valor armazenado
+  "descricao": "Condição SQL para operações"   // pode ser null
+}
+```
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `404` | Parâmetro não encontrado no banco do tenant |
 
 ---
 
