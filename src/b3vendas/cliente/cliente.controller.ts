@@ -41,6 +41,16 @@ export class ClienteController {
     return this.clienteService.redeSp(req.user.dbId, req.user.userId);
   }
 
+  @Get('tabela')
+  @RolesFront(RoleFront.SUPER, RoleFront.SALER)
+  async tabela(
+    @Request() req: { user: { dbId: string } },
+    @Query('idOper', ParseIntPipe) idOper: number,
+    @Query('idCli', ParseIntPipe) idCli: number,
+  ) {
+    return await this.clienteService.tabela(req.user.dbId, idOper, idCli);
+  }
+
   @Get(':id')
   async info(
     @Request() req: { user: { userId: string; dbId: string } },

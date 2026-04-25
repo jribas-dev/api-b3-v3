@@ -137,6 +137,8 @@ Resumo das entities e suas tabelas:
 | Método | Rota | Descrição |
 |---|---|---|
 | `GET` | `/b3vendas/clientes/buscar?q=` | Busca clientes (mín. 2 chars, máx. 50) |
+| `GET` | `/b3vendas/clientes/rede-sp` | Clientes do vendedor ativos, UF SP ou nula, com tabela de preços (roles SUPER/SALER) |
+| `GET` | `/b3vendas/clientes/tabela?idOper=&idCli=` | Catálogo com preços e impostos pré-calculados para cliente/operação (roles SUPER/SALER) |
 | `GET` | `/b3vendas/clientes/:id` | Dados do cliente |
 | `POST` | `/b3vendas/clientes` | Criar cliente |
 | `PATCH` | `/b3vendas/clientes/:id` | Atualizar cliente |
@@ -185,4 +187,6 @@ A tabela `cntequipe` tem chave composta `(idcntlider, idcntliderado)` — ambos 
 Todos os endpoints exigem `JwtGuard` + `UserInstanceGuard`. Endpoints com restrição de papel aplicam também `RolesFrontGuard`:
 
 - `DELETE /clientes/:id` — role `SUPER`.
+- `GET /clientes/rede-sp` — roles `SUPER` ou `SALER`.
+- `GET /clientes/tabela` — roles `SUPER` ou `SALER`.
 - `GET /equipe` — roles `SUPER` ou `SALER`.

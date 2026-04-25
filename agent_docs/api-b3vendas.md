@@ -163,6 +163,70 @@ Remove um cliente.
 
 ---
 
+### `GET /b3vendas/clientes/rede-sp`
+
+Lista os clientes do vendedor autenticado que são elegíveis para a rede SP: ativos, com UF = `SP` ou UF nula, e com tabela de preços configurada (`idtab IS NOT NULL`).
+
+**Auth:** `JwtGuard` + `UserInstanceGuard` + `RolesFrontGuard` (roles: `supervisor` ou `saler`)
+
+**Resposta `200`:**
+
+```jsonc
+[
+  {
+    "id": 123,
+    "nome": "Empresa ABC",              // COALESCE(fantasia, razao)
+    "docfed": "12.345.678/0001-90",     // CNPJ/CPF formatado (pode ser null)
+    "email": "contato@abc.com",         // pode ser null
+    "fone": "(11) 3333-3333",           // pode ser null
+    "cel": "(11) 99999-9999",           // pode ser null
+    "cidade": "São Paulo"               // pode ser null
+  }
+]
+```
+
+---
+
+### `GET /b3vendas/clientes/tabela`
+
+Retorna o catálogo de produtos com preços e impostos pré-calculados (IPI e ICMS-ST) para um cliente e operação fiscal específicos. Usa a tabela de preços vinculada ao cliente (`cnt.idtab → prdtabvalor`). Retorna apenas produtos ativos, vendáveis e não-serviço.
+
+**Auth:** `JwtGuard` + `UserInstanceGuard` + `RolesFrontGuard` (roles: `supervisor` ou `saler`)
+
+**Query params:**
+
+| Param | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `idOper` | integer | ✅ | ID da operação fiscal |
+| `idCli` | integer | ✅ | ID do cliente |
+
+**Resposta `200`:**
+
+```jsonc
+[
+  {
+    "operacao": "Venda de Mercadoria",  // Nome da operação; "NÃO CONFIGURADO" se não vinculada
+    "nometab": "Tabela SP",             // Nome da tabela de preços do cliente
+    "ufbase": "SP",                     // UF de referência (fixo)
+    "id": 456,                          // ID do produto
+    "codigo": "SKU-001",               // Código do produto (pode ser null)
+    "ref": "REF-XYZ",                  // Referência (pode ser null)
+    "barras": "7891234567890",         // Código de barras (pode ser null)
+    "nome": "Produto XYZ",
+    "unidade": "UN",                   // Unidade de medida (pode ser null)
+    "venda": 89.90,                    // Preço de venda (tabela do cliente ou padrão do produto)
+    "ivast": 12.00,                    // Alíquota de ICMS-ST aplicável (%)
+    "vicmsst": 5.42,                   // Valor de ICMS-ST por unidade
+    "ipisaliq": 5.00,                  // Alíquota de IPI (%)
+    "vipi": 4.50                       // Valor de IPI por unidade
+  }
+]
+```
+
+> Todos os campos de valor (`venda`, `ivast`, `vicmsst`, `ipisaliq`, `vipi`) são retornados como `number`. O cálculo de ST considera `icmsiva`, `icmsaliq` e `icmsredu` da tabela `impostos`; operações com `finalidade = 'C'` zeram ST e `ivast`.
+
+---
+
 ## Equipe de Vendas
 
 ### `GET /b3vendas/equipe`

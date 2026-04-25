@@ -14,6 +14,7 @@ import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { ResponseClienteBuscaDto } from './dto/response-cliente-busca.dto';
 import { ResponseClienteInfoDto } from './dto/response-cliente-info.dto';
 import { ResponseClienteRedeSpDto } from './dto/response-cliente-rede-sp.dto';
+import { ResponseClienteTabelaDto } from './dto/response-cliente-tabela.dto';
 
 function padLeft(value: number, length: number): string {
   return String(value).padStart(length, '0');
@@ -151,6 +152,64 @@ export class ClienteService {
       [vendId],
     );
     return rows.map((r) => plainToInstance(ResponseClienteRedeSpDto, r));
+  }
+
+  async tabela(
+    dbId: string,
+    idOper: number,
+    idCli: number,
+  ): Promise<ResponseClienteTabelaDto[]> {
+    const ds = await this.tenantService.getDataSource(dbId);
+    const rows = await ds.query<
+      {
+        operacao: string;
+        nometab: string;
+        ufbase: string;
+        id: number;
+        codigo: string | null;
+        ref: string | null;
+        barras: string | null;
+        nome: string;
+        unidade: string | null;
+        venda: string;
+        ivast: string;
+        vicmsst: string;
+        ipisaliq: string;
+        vipi: string;
+      }[]
+    >(
+      `SELECT
+         COALESCE(operacoes.operacao, 'NÃO CONFIGURADO') AS operacao,
+         prdtab.nometab,
+         'SP' AS ufbase,
+         prd.id, prd.codigo, prd.ref, prd.barras, prd.nome, prd.unidade,
+         COALESCE(prdtabvalor.valor, prd.venda) AS venda,
+         COALESCE(IF(impostos.icmsiva = 0 OR operacoes.finalidade = 'C', 0, impostos.icmsaliq), 0) AS ivast,
+         CAST(COALESCE(IF(impostos.icmsiva = 0 OR operacoes.finalidade = 'C', 0,
+           IF(impostos.icmsredu = 0,
+             (COALESCE(prdtabvalor.valor, prd.venda) + CAST(COALESCE(COALESCE(prdtabvalor.valor, prd.venda) * (impostos.ipialiq / 100), COALESCE(impostos.ipivalor * 1, 0)) AS DECIMAL(12,2))) * (1 + (impostos.icmsiva / 100)) * (impostos.icmsaliq / 100) - CAST(COALESCE(prdtabvalor.valor, prd.venda) * (impostos.icmsaliq / 100) AS DECIMAL(12,2)),
+             (COALESCE(prdtabvalor.valor, prd.venda) + CAST(COALESCE(COALESCE(prdtabvalor.valor, prd.venda) * (impostos.ipialiq / 100), COALESCE(impostos.ipivalor * 1, 0)) AS DECIMAL(12,2))) * (1 + (impostos.icmsiva / 100)) * (impostos.icmsaliq / 100) - CAST(COALESCE(prdtabvalor.valor, prd.venda) * ((impostos.icmsaliq * ((100 - impostos.icmsredu) / 100)) / 100) AS DECIMAL(12,2))
+           )
+         ), 0) AS DECIMAL(12,2)) AS vicmsst,
+         COALESCE(impostos.ipialiq, 0) AS ipisaliq,
+         CAST(COALESCE(COALESCE(prdtabvalor.valor, prd.venda) * (impostos.ipialiq / 100), COALESCE(impostos.ipivalor * 1, 0)) AS DECIMAL(12,2)) AS vipi
+       FROM prd
+       INNER JOIN prdtabvalor ON prdtabvalor.idprod = prd.id
+       INNER JOIN prdtab ON prdtab.id = prdtabvalor.idtab
+       INNER JOIN cnt ON cnt.idtab = prdtabvalor.idtab
+       LEFT OUTER JOIN prdimposto ON prdimposto.idprd = prd.id
+       LEFT OUTER JOIN impostos ON impostos.id = prdimposto.idimposto
+       LEFT OUTER JOIN operacoes ON operacoes.id = prdimposto.idoperacao
+         AND operacoes.finalidade IN ('C', 'R', 'I')
+       WHERE operacoes.id = ?
+         AND cnt.id = ?
+         AND prd.ativo
+         AND prd.podevender
+         AND NOT prd.servico
+       ORDER BY prd.nome`,
+      [idOper, idCli],
+    );
+    return rows.map((r) => plainToInstance(ResponseClienteTabelaDto, r));
   }
 
   async remove(dbId: string, id: number): Promise<{ id: number }> {
