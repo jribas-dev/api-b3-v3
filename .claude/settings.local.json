@@ -10,7 +10,8 @@
       "Bash(npm list *)",
       "Bash(npm view *)",
       "WebSearch",
-      "mcp__mysql__execute_sql"
+      "mcp__mysql__execute_sql",
+      "Bash(npx eslint *)"
     ]
   }
 }

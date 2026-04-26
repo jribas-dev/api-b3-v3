@@ -26,6 +26,7 @@
 - [Pedidos (Vendas)](#pedidos-vendas)
 - [Itens do Pedido](#itens-do-pedido)
 - [Formas e Condições de Pagamento](#formas-e-condições-de-pagamento)
+- [Métricas de Desempenho](#métricas-de-desempenho)
 
 ---
 
@@ -620,6 +621,124 @@ Lista as condições de pagamento disponíveis para um pedido específico.
 **Path params:** `id` (integer — ID do pedido)
 
 **Resposta `200`:** array com shape similar a formas de pagamento (id + nome/descrição da condição).
+
+---
+
+## Métricas de Desempenho
+
+Base: `/b3vendas/metricas`
+
+Endpoints para acompanhamento do desempenho do vendedor autenticado. O escopo é resolvido pela `roleFront`:
+
+- **`saler`** — só vê os próprios dados (`venda.idvend = vendId` ou `cnt.idvende = vendId`).
+- **`supervisor`** — vê os próprios dados **e** os dos vendedores subordinados (via `cntequipe.idcntlider = vendId`).
+
+Qualquer outro `roleFront` recebe `403 Forbidden`.
+
+**Auth (todos os endpoints):** `JwtGuard` + `UserInstanceGuard` + `RolesFrontGuard` (roles: `supervisor` ou `saler`).
+
+### Critério de venda considerada
+
+Para os endpoints `vendas-semanais`, `vendas-mensais` e `top-clientes-ativos`, somente vendas que satisfaçam **todas** as condições abaixo entram na agregação:
+
+```
+venda.tipo    = 'V'   (validada)
+venda.subtipo = 'N'   (normal — exclui transferência/bonificação/garantia)
+venda.baixado = 1     (efetivamente concluída)
+```
+
+> O endpoint `clientes-inativos` ignora esse filtro: considera **qualquer** linha em `venda` (independentemente de `tipo`/`subtipo`/`baixado`) ao avaliar atividade.
+
+---
+
+### `GET /b3vendas/metricas/vendas-semanais`
+
+Total de vendas (em R$) agrupado por **semana ISO**, cobrindo as últimas **12 semanas**. Buckets sem vendas vêm com valor `0` para garantir um eixo X completo.
+
+**Resposta `200`:**
+
+```jsonc
+{
+  "chartType": "line",
+  "labels": [
+    "2026-W07", "2026-W08", "2026-W09", "2026-W10",
+    "2026-W11", "2026-W12", "2026-W13", "2026-W14",
+    "2026-W15", "2026-W16", "2026-W17", "2026-W18"
+  ],
+  "series": [
+    { "name": "Vendas (R$)", "data": [0, 2626.48, 0, 0, 0, 0, 10.00, 61.50, 0, 0, 0, 0] }
+  ]
+}
+```
+
+---
+
+### `GET /b3vendas/metricas/vendas-mensais`
+
+Total de vendas (em R$) agrupado por mês (`YYYY-MM`), cobrindo os últimos **12 meses**. Buckets sem vendas vêm com valor `0`.
+
+**Resposta `200`:**
+
+```jsonc
+{
+  "chartType": "line",
+  "labels": [
+    "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10",
+    "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"
+  ],
+  "series": [
+    { "name": "Vendas (R$)", "data": [205.15, 0, 2445.63, 245.06, 0, 6334.50, 6608.29, 1810.77, 3815.65, 11546.70, 10.00, 61.50] }
+  ]
+}
+```
+
+---
+
+### `GET /b3vendas/metricas/top-clientes-ativos`
+
+Top **15 clientes** com maior valor total comprado nos **últimos 90 dias**, em ordem decrescente. Apresenta duas séries alinhadas: valor monetário e número de pedidos.
+
+**Resposta `200`:**
+
+```jsonc
+{
+  "chartType": "bar_h",
+  "labels": ["H B FULLER BRASIL LTDA", "CONSUMIDOR FINAL", "CRISLOG", "..."],
+  "series": [
+    { "name": "Valor (R$)", "data": [4549.00, 2064.32, 1380.00] },
+    { "name": "Pedidos",    "data": [1, 1, 1] }
+  ]
+}
+```
+
+> O label de cada cliente é `COALESCE(cnt.fantasia, cnt.razao)`. Pedidos é a contagem de vendas do cliente no período (sob o critério da seção acima).
+
+---
+
+### `GET /b3vendas/metricas/clientes-inativos`
+
+Lista de clientes vinculados ao vendedor (`cnt.idvende`) que **não tiveram nenhuma venda** (qualquer `tipo`/`subtipo`/`baixado`) nos **últimos 60 dias**. Apenas clientes com `cnt.ativo = 1`. Inclui clientes que nunca venderam (sem registros em `venda`).
+
+**Resposta `200`:**
+
+```jsonc
+[
+  {
+    "id": 115,
+    "nome": "AMANDA BIANCHINI BERTOLETTI",     // COALESCE(fantasia, razao)
+    "docfed": "222.222.222-22",                 // CPF/CNPJ formatado (pode ser null)
+    "email": "cliente@exemplo.com",             // pode ser null
+    "fone": "(11) 3333-3333",                   // pode ser null
+    "cel": "(11) 99999-9999",                   // pode ser null
+    "cidade": "Rio Claro",                      // pode ser null
+    "uf": "SP",                                 // pode ser null
+    "ultimaVenda": "2025-11-24T17:15:20.000Z",  // MAX(venda.dthremissao) global do cliente; null se nunca vendeu
+    "idvende": 233                              // ID do vendedor responsável pelo cliente
+  }
+]
+```
+
+> Resultado ordenado por `nome` (ASC). `ultimaVenda` é a última data registrada **em qualquer venda** do cliente — útil para distinguir "nunca comprou" de "comprou há muito tempo".
 
 ---
 

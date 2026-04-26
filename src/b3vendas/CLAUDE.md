@@ -18,7 +18,8 @@ src/b3vendas/
 ├── formas-pagamento/           # Formas e condições de pagamento (formapg, condpg)
 ├── venda/                      # Pedidos/vendas (tabela venda)
 ├── venda-item/                 # Itens do pedido (tabela vendaitem)
-└── equipe/                     # Equipe de vendas (tabela cntequipe)
+├── equipe/                     # Equipe de vendas (tabela cntequipe)
+└── metricas/                   # Indicadores de desempenho do vendedor
 ```
 
 > **Atenção:** As entities deste módulo usam IDs numéricos inteiros (legado), **não** CUID2 como nas demais entities da aplicação.
@@ -157,6 +158,10 @@ Resumo das entities e suas tabelas:
 | `POST` | `/b3vendas/pedidos/:id/itens` | Adicionar item ao pedido |
 | `DELETE` | `/b3vendas/pedidos/:id/itens/:seq` | Remover item do pedido |
 | `GET` | `/b3vendas/equipe` | Lista a equipe de vendas do usuário autenticado (ver seção Equipe) |
+| `GET` | `/b3vendas/metricas/vendas-semanais` | Total de vendas por semana ISO — últimas 12 semanas (gráfico, roles SUPER/SALER) |
+| `GET` | `/b3vendas/metricas/vendas-mensais` | Total de vendas por mês — últimos 12 meses (gráfico, roles SUPER/SALER) |
+| `GET` | `/b3vendas/metricas/top-clientes-ativos` | Top 15 clientes por valor — últimos 90 dias (gráfico, roles SUPER/SALER) |
+| `GET` | `/b3vendas/metricas/clientes-inativos` | Clientes do vendedor sem qualquer lançamento em `venda` nos últimos 60 dias (listagem, roles SUPER/SALER) |
 
 ## Equipe de Vendas (`/b3vendas/equipe`)
 
@@ -182,6 +187,74 @@ Qualquer outro `roleFront` recebe `403 Forbidden` — o `RolesFrontGuard` já fi
 
 A tabela `cntequipe` tem chave composta `(idcntlider, idcntliderado)` — ambos apontando para `cnt.id` com `ON DELETE CASCADE`. Não há entity dedicada; o serviço usa `ds.query()` com parâmetros posicionais.
 
+## Métricas de Desempenho (`/b3vendas/metricas`)
+
+Submódulo read-only que expõe indicadores de performance do vendedor autenticado. Quatro endpoints `GET`, todos com `@RolesFront(SUPER, SALER)` no nível do controller:
+
+| Rota | Tipo | Janela | Origem |
+|---|---|---|---|
+| `vendas-semanais` | gráfico (`line`) | 12 semanas ISO | `venda.vlrtotal` agregado por `YEARWEEK(dthremissao, 1)` |
+| `vendas-mensais` | gráfico (`line`) | 12 meses | `venda.vlrtotal` agregado por `DATE_FORMAT(dthremissao, '%Y-%m')` |
+| `top-clientes-ativos` | gráfico (`bar_h`) | 90 dias | `venda` ⨝ `cnt`, top 15 por `SUM(vlrtotal)` desc |
+| `clientes-inativos` | listagem | 60 dias | `cnt` LEFT excludes via `NOT EXISTS` em `venda` |
+
+### Escopo (resolução de `vendIds`)
+
+`MetricasService.resolveScope(dbId, userId, roleFront)` retorna a lista de IDs de vendedor a considerar:
+
+- **`SALER`** — `[vendId]` (somente o próprio).
+- **`SUPER`** — `[vendId, ...subordinados]` via `SELECT idcntliderado FROM cntequipe WHERE idcntlider = ?`.
+- Qualquer outra role lança `ForbiddenException` (defense in depth — o `RolesFrontGuard` já filtra).
+
+A lista é injetada nas queries via `IN (?, ?, ...)` com placeholders gerados dinamicamente. Spread no array de parâmetros: `[...vendIds]`.
+
+### Critério de venda considerada (gráficos 1, 2, 3)
+
+```sql
+v.tipo = 'V' AND v.subtipo = 'N' AND v.baixado = 1
+```
+
+Este filtro **não se aplica** a `clientes-inativos`: o cálculo de inatividade considera **qualquer** registro em `venda` (independente de `tipo`/`subtipo`/`baixado`) — uma venda em rascunho conta como "atividade" e remove o cliente da lista.
+
+### Critério de cliente inativo
+
+```sql
+WHERE c.ativo
+  AND c.idvende IN (vendIds)
+  AND NOT EXISTS (
+    SELECT 1 FROM venda v
+     WHERE v.idcli = c.id
+       AND v.dthremissao >= DATE_SUB(CURDATE(), INTERVAL 60 DAY)
+  )
+```
+
+O vínculo cliente↔vendedor é via `cnt.idvende` (vendedor padrão). A subquery `(SELECT MAX(v2.dthremissao) FROM venda v2 WHERE v2.idcli = c.id)` retorna a data da última venda registrada (qualquer status), útil para distinguir "nunca comprou" (`null`) de "comprou há muito tempo".
+
+### Shape de gráfico (`ChartDataDto`)
+
+```ts
+type ChartType = 'bar_v' | 'bar_h' | 'pie' | 'line';
+
+class ChartDataDto {
+  chartType: ChartType;
+  labels: string[];
+  series: { name: string; data: number[] }[];
+}
+```
+
+Mesma forma do `ChartDataDto` usado em `b3dash` — DTO local no módulo (sem dependência cruzada). Buckets vazios são preenchidos com `0` em TypeScript via `last12WeekLabels()` / `last12MonthLabels()` + `fillSeries()`, garantindo eixo X completo no front.
+
+### Decisões
+
+| Decisão | Justificativa |
+|---|---|
+| **Sem entities novas** | Queries são leituras agregadas em `venda` e `cnt`. `ds.query<T[]>(sql, params)` direto. |
+| **Janelas fixas (12/12/90/60)** | Conforme requisito de produto. Sem `?periodo` query param — manter a API simples para o front. |
+| **`IN (?,?,...)` expandido** | mysql2/typeorm não tem suporte oficial documentado para arrays em `IN (?)`. Geramos placeholders manualmente para evitar surpresas. |
+| **`venda.baixado = 1`** | `bit(1)` aceita comparação numérica em `WHERE` no MySQL 8 — não precisa `CAST` aqui (ao contrário de leitura no SELECT, onde voltaria como `Buffer`). |
+| **Label de cliente = `COALESCE(fantasia, razao)`** | Mesmo padrão de `clientes/rede-sp` e `b3dash/faturamento/top-clientes`. |
+| **`top-clientes-ativos` com 2 séries** | Frontend pode renderizar valor + nº de pedidos lado a lado sem nova request. |
+
 ## Guards
 
 Todos os endpoints exigem `JwtGuard` + `UserInstanceGuard`. Endpoints com restrição de papel aplicam também `RolesFrontGuard`:
@@ -190,3 +263,4 @@ Todos os endpoints exigem `JwtGuard` + `UserInstanceGuard`. Endpoints com restri
 - `GET /clientes/rede-sp` — roles `SUPER` ou `SALER`.
 - `GET /clientes/tabela` — roles `SUPER` ou `SALER`.
 - `GET /equipe` — roles `SUPER` ou `SALER`.
+- `GET /metricas/*` (todas as 4 rotas) — roles `SUPER` ou `SALER` (decorator no controller).
