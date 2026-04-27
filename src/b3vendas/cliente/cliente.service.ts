@@ -206,6 +206,7 @@ export class ClienteService {
          AND prd.ativo
          AND prd.podevender
          AND NOT prd.servico
+         AND prdtabvalor.valor > 0
        ORDER BY prd.nome`,
       [idOper, idCli],
     );
