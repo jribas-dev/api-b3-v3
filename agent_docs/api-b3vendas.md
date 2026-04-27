@@ -264,6 +264,73 @@ Lista a equipe de vendas visível para o usuário autenticado. O comportamento v
 
 ---
 
+### `GET /b3vendas/equipe/sem-equipe`
+
+Lista todos os vendedores (`cntclass.comissionado`) que **não pertencem a nenhuma equipe** (não aparecem como `idcntliderado` em `cntequipe`), excluindo o próprio usuário autenticado. Usado para selecionar quem adicionar à equipe.
+
+**Auth:** `JwtGuard` + `UserInstanceGuard` + `RolesFrontGuard` (role: `supervisor`)
+
+**Resposta `200`:**
+
+```jsonc
+[
+  {
+    "id": 22,
+    "razao": "Marcos Ferreira",
+    "cel": "(11) 97777-7777",
+    "fax": null,
+    "liderado": 0
+  }
+]
+```
+
+> Ordenado por `razao ASC`. O campo `liderado` sempre vale `0` (ainda não é subordinado de ninguém).
+
+---
+
+### `POST /b3vendas/equipe`
+
+Adiciona um vendedor como subordinado do supervisor autenticado na tabela `cntequipe`. O supervisor autenticado torna-se `idcntlider`; o vendedor informado torna-se `idcntliderado`.
+
+**Auth:** `JwtGuard` + `UserInstanceGuard` + `RolesFrontGuard` (role: `supervisor`)
+
+**Body (JSON):**
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `idcntliderado` | integer | ✅ | ID do vendedor a adicionar (`cnt.id`). Deve ser diferente do próprio usuário |
+
+**Respostas:**
+
+| Status | Descrição |
+|---|---|
+| `201 Created` | Vínculo criado com sucesso (sem corpo) |
+| `400 Bad Request` | `idcntliderado` é igual ao próprio usuário |
+| `409 Conflict` | Vendedor já pertence a esta equipe |
+
+---
+
+### `DELETE /b3vendas/equipe/:id`
+
+Remove um vendedor da equipe do supervisor autenticado. O parâmetro `:id` é o `cnt.id` do vendedor a ser removido (`idcntliderado`).
+
+**Auth:** `JwtGuard` + `UserInstanceGuard` + `RolesFrontGuard` (role: `supervisor`)
+
+**Path params:**
+
+| Param | Tipo | Descrição |
+|---|---|---|
+| `id` | integer | ID do vendedor subordinado (`cnt.id`) |
+
+**Respostas:**
+
+| Status | Descrição |
+|---|---|
+| `204 No Content` | Vínculo removido com sucesso |
+| `404 Not Found` | Vínculo não existe nesta equipe |
+
+---
+
 ## Operações Fiscais
 
 ### `GET /b3vendas/operacoes`
