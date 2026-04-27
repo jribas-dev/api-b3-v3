@@ -72,6 +72,43 @@ venda ──── vendaitem → prd
       └─── vendacaixa → formapg / condpg
 ```
 
+## Tipos de Pessoa (`cnt` / `cntclass` / `cntclasses`)
+
+`cnt` é a entidade forte de **todos** os tipos de pessoas/contatos. O tipo é determinado via:
+
+- **`cntclass`** — catálogo de tipos (uma coluna booleana por tipo):
+
+  | Coluna | Tipo de pessoa |
+  |---|---|
+  | `ativo` | Cliente |
+  | `passivo` | Fornecedor |
+  | `emitente` | Empresa |
+  | `comissionado` | Vendedor |
+  | `colaborador` | Funcionário |
+  | `logistica` | Transportadora |
+
+- **`cntclasses`** — junção N:N (`idcnt`, `idclass`) entre `cnt` e `cntclass`. Um mesmo `cnt` pode ter múltiplos tipos.
+
+Para filtrar por tipo, sempre use o JOIN duplo:
+
+```sql
+INNER JOIN cntclasses ON cntclasses.idcnt = c.id
+INNER JOIN cntclass   ON cntclass.id = cntclasses.idclass AND cntclass.<tipo>
+```
+
+**Tipos em uso nesta API:**
+
+| Coluna | Tipo | Onde é usado |
+|---|---|---|
+| `ativo` | Cliente | Módulo `cliente/`, filtros de visibilidade por vendedor |
+| `emitente` | Empresa | `SellerContextService` (resolução de `idEmp`) |
+| `comissionado` | Vendedor | `equipe/semEquipe`, `seller-context` |
+
+**Regras de vínculo:**
+
+- **Vendedor ↔ Sistema:** quando um `cnt comissionado` está vinculado a `usu`, esse vendedor também acessa o sistema. O JWT carrega `userId`; a resolução é `userId → usu → cnt (comissionado)`.
+- **Cliente ↔ Vendedor:** `cnt.idvende` aponta para o vendedor padrão do cliente. Um cliente é visível somente para o próprio vendedor ou para o supervisor da equipe desse vendedor.
+
 ## Máquina de Estados da Venda (`venda.tipo`)
 
 | Valor | Estado | Editável |
