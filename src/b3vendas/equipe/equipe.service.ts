@@ -82,7 +82,7 @@ export class EquipeService {
     }
 
     const existing = await ds.query<{ id: number }[]>(
-      `SELECT id FROM cntequipe WHERE idcntlider = ? AND idcntliderado = ? LIMIT 1`,
+      `SELECT idcntlider FROM cntequipe WHERE idcntlider = ? AND idcntliderado = ? LIMIT 1`,
       [vendId, idcntliderado],
     );
     if (existing.length) {

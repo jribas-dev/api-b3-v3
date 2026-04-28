@@ -9,16 +9,31 @@ export class ResponseClienteInfoDto {
   razao: string;
 
   @Expose()
+  fantasia: string | null;
+
+  @Expose()
   docfed: string | null;
 
   @Expose()
   docformatado: string | null;
 
   @Expose()
-  fone: string | null;
+  docest: string | null;
 
   @Expose()
-  cel: string | null;
+  email: string | null;
+
+  @Expose()
+  emailnfe: string | null;
+
+  @Expose()
+  emailcob: string | null;
+
+  @Expose()
+  site: string | null;
+
+  @Expose()
+  cep: string | null;
 
   @Expose()
   endereco: string | null;
@@ -36,17 +51,20 @@ export class ResponseClienteInfoDto {
   uf: string | null;
 
   @Expose()
+  fone: string | null;
+
+  @Expose()
+  fone2: string | null;
+
+  @Expose()
+  cel: string | null;
+
+  @Expose()
   obsvenda: string | null;
 
   @Expose()
   idoper: number | null;
 
   @Expose()
-  email: string | null;
-
-  @Expose()
-  emailnfe: string | null;
-
-  @Expose()
-  emailcob: string | null;
+  idvende: number | null;
 }

@@ -92,15 +92,25 @@ Retorna os dados completos de um cliente para uso no formulário de pedido.
 {
   "id": 123,
   "razao": "Empresa ABC Ltda",
-  "docfed": "12.345.678/0001-90",   // CNPJ ou CPF (pode ser null)
-  "fone": "(11) 3333-3333",          // Telefone principal (pode ser null)
+  "docfed": "12345678000190",            // CNPJ ou CPF (só numeros) - pode ser null
+  "docformatado": "12.345.678/0001-90",  // CNPJ ou CPF (formatado)
+  "docest": "103.104.105.106",          // Inscrição Estadual ou RG (pode ser null)
+  "email": "mail@test.com",            // Email Principal (pode ser null)
+  "emailnfe": "nfe@test.com",         // Email Nota Fiscal (pode ser null)
+  "emailcob": "cob@test.com",        // Email Cobrança (pode ser null)
+  "site": "teste.com",               // Site do Cliente (pode ser null)
+  "cep": "14035090",                 // CEP (pode ser null)
   "endereco": "Rua das Flores",      // Logradouro (pode ser null)
   "nroend": "100",                   // Número do endereço (pode ser null)
   "bairro": "Centro",                // Bairro (pode ser null)
   "cidade": "São Paulo",             // Cidade (pode ser null)
   "uf": "SP",                        // UF (pode ser null)
+  "fone": "(11) 3333-3333",          // Telefone principal (pode ser null)
+  "fone2": "(11) 93333-3333",        // Telefone secundário (pode ser null)
+  "cel": "(11) 92222-3333",          // Telefone celular (pode ser null)
   "obsvenda": "Entregar no período da tarde",  // Observação exibida ao criar pedido (pode ser null)
-  "idoper": 5                        // Operação fiscal padrão do cliente (pode ser null)
+  "idoper": 5,                        // Operação fiscal padrão do cliente (pode ser null)
+  "vende": 102                       // Vendedor do cliente (pode ser null)
 }
 ```
 
@@ -121,6 +131,8 @@ Cria um novo cliente.
 | `docfed` | string | ❌ | CNPJ ou CPF (máx. 20 caracteres) |
 | `docest` | string | ❌ | Inscrição estadual (máx. 20 caracteres) |
 | `email` | string | ❌ | E-mail do cliente |
+| `emailnfe` | string | ❌ | E-mail do cliente para NFe|
+| `emailcob` | string | ❌ | E-mail do cliente para Cobrança|
 | `site` | string | ❌ | Site (máx. 120 caracteres) |
 | `cep` | string | ❌ | CEP (máx. 10 caracteres) |
 | `endereco` | string | ❌ | Logradouro (máx. 120 caracteres) |
@@ -133,6 +145,7 @@ Cria um novo cliente.
 | `cel` | string | ❌ | Celular (máx. 20 caracteres) |
 | `obsvenda` | string | ❌ | Observação exibida na tela de venda (máx. 255 caracteres) |
 | `idoper` | integer | ❌ | ID da operação fiscal padrão do cliente (mínimo: 1) |
+| `idvende` | integer | ❌ | ID do vendedor do cliente (mínimo: 1) |
 
 **Resposta `201`:** objeto do cliente criado.
 

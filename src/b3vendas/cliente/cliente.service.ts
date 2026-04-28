@@ -89,7 +89,11 @@ export class ClienteService {
     const ds = await this.tenantService.getDataSource(dbId);
     const repo = ds.getRepository(ClienteEntity);
 
-    const entity = repo.create({ ...dto, idvende: vendId, ativo: true });
+    const entity = repo.create({
+      ...dto,
+      idvende: dto.idvende || vendId,
+      ativo: true,
+    });
     const saved = await repo.save(entity);
     return plainToInstance(ResponseClienteInfoDto, saved);
   }

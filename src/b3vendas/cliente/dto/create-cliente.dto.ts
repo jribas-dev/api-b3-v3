@@ -35,6 +35,16 @@ export class CreateClienteDto {
   email?: string;
 
   @IsOptional()
+  @IsEmail()
+  @MaxLength(120)
+  emailnfe?: string;
+
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(120)
+  emailcob?: string;
+
+  @IsOptional()
   @IsString()
   @MaxLength(120)
   site?: string;
@@ -93,4 +103,9 @@ export class CreateClienteDto {
   @IsInt()
   @Min(1)
   idoper?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  idvende?: number;
 }
