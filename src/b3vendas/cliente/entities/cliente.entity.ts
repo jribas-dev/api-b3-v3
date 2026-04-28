@@ -1,9 +1,14 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
+export type TipoPessoa = 'F' | 'J' | 'E' | 'R';
+
 @Entity({ name: 'cnt' })
 export class ClienteEntity {
   @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
+
+  @Column({ type: 'enum', enum: ['F', 'J', 'E', 'R'], default: 'F' })
+  tipopessoa: TipoPessoa;
 
   @Column({ type: 'varchar', length: 100 })
   razao: string;

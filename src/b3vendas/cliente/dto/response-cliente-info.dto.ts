@@ -1,9 +1,13 @@
 import { Exclude, Expose } from 'class-transformer';
+import { TipoPessoa } from '../entities/cliente.entity';
 
 @Exclude()
 export class ResponseClienteInfoDto {
   @Expose()
   id: number;
+
+  @Expose()
+  tipopessoa: TipoPessoa;
 
   @Expose()
   razao: string;

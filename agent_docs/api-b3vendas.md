@@ -91,6 +91,7 @@ Retorna os dados completos de um cliente para uso no formulário de pedido.
 ```jsonc
 {
   "id": 123,
+  "tipopessoa": "J",                    // Tipo de pessoa: "F"=Física, "J"=Jurídica, "E"=Estatal, "R"=Rural
   "razao": "Empresa ABC Ltda",
   "docfed": "12345678000190",            // CNPJ ou CPF (só numeros) - pode ser null
   "docformatado": "12.345.678/0001-90",  // CNPJ ou CPF (formatado)
@@ -126,6 +127,7 @@ Cria um novo cliente.
 
 | Campo | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
+| `tipopessoa` | string | ❌ | Tipo de pessoa: `F`=Física (padrão), `J`=Jurídica, `E`=Estatal, `R`=Rural |
 | `razao` | string | ✅ | Razão social ou nome (2–100 caracteres) |
 | `fantasia` | string | ❌ | Nome fantasia (máx. 60 caracteres) |
 | `docfed` | string | ❌ | CNPJ ou CPF (máx. 20 caracteres) |

@@ -1,5 +1,6 @@
 import {
   IsEmail,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -7,8 +8,13 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { TipoPessoa } from '../entities/cliente.entity';
 
 export class CreateClienteDto {
+  @IsOptional()
+  @IsEnum(['F', 'J', 'E', 'R'])
+  tipopessoa?: TipoPessoa;
+
   @IsString()
   @MinLength(2)
   @MaxLength(100)
