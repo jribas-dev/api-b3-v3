@@ -110,8 +110,8 @@ Retorna os dados completos de um cliente para uso no formulário de pedido.
   "fone2": "(11) 93333-3333",        // Telefone secundário (pode ser null)
   "cel": "(11) 92222-3333",          // Telefone celular (pode ser null)
   "obsvenda": "Entregar no período da tarde",  // Observação exibida ao criar pedido (pode ser null)
-  "idoper": 5,                        // Operação fiscal padrão do cliente (pode ser null)
-  "vende": 102                       // Vendedor do cliente (pode ser null)
+  "idoper": 5,                       // Operação fiscal padrão do cliente (pode ser null)
+  "idvende": 102                     // Vendedor do cliente (pode ser null)
 }
 ```
 

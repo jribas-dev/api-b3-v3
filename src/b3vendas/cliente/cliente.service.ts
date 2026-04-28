@@ -108,11 +108,14 @@ export class ClienteService {
     const ds = await this.tenantService.getDataSource(dbId);
     const repo = ds.getRepository(ClienteEntity);
 
+    if (dto.tipopessoa !== undefined) cliente.tipopessoa = dto.tipopessoa;
     if (dto.razao !== undefined) cliente.razao = dto.razao;
     if (dto.fantasia !== undefined) cliente.fantasia = dto.fantasia;
     if (dto.docfed !== undefined) cliente.docfed = dto.docfed;
     if (dto.docest !== undefined) cliente.docest = dto.docest;
     if (dto.email !== undefined) cliente.email = dto.email;
+    if (dto.emailnfe !== undefined) cliente.emailnfe = dto.emailnfe;
+    if (dto.emailcob !== undefined) cliente.emailcob = dto.emailcob;
     if (dto.site !== undefined) cliente.site = dto.site;
     if (dto.cep !== undefined) cliente.cep = dto.cep;
     if (dto.endereco !== undefined) cliente.endereco = dto.endereco;
@@ -125,6 +128,7 @@ export class ClienteService {
     if (dto.cel !== undefined) cliente.cel = dto.cel;
     if (dto.obsvenda !== undefined) cliente.obsvenda = dto.obsvenda;
     if (dto.idoper !== undefined) cliente.idoper = dto.idoper;
+    if (dto.idvende !== undefined) cliente.idvende = dto.idvende;
     const saved = await repo.save(cliente);
     return plainToInstance(ResponseClienteInfoDto, saved);
   }
