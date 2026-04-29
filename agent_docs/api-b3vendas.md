@@ -588,7 +588,32 @@ Retorna os detalhes completos de um pedido, incluindo todos os itens.
       "unitario": 89.90,  // Preço unitário
       "total": 179.80     // qtde × unitario
     }
-  ]
+  ],
+  "cliente": {            // null se idcli for null
+    "id": 123,
+    "tipopessoa": "J",                    // "F"=Física, "J"=Jurídica, "E"=Estatal, "R"=Rural
+    "razao": "Empresa ABC Ltda",
+    "fantasia": null,
+    "docfed": "12345678000190",
+    "docformatado": "12.345.678/0001-90",
+    "docest": "103.104.105.106",
+    "email": "mail@test.com",
+    "emailnfe": "nfe@test.com",
+    "emailcob": "cob@test.com",
+    "site": "teste.com",
+    "cep": "14035090",
+    "endereco": "Rua das Flores",
+    "nroend": "100",
+    "bairro": "Centro",
+    "cidade": "São Paulo",
+    "uf": "SP",
+    "fone": "(11) 3333-3333",
+    "fone2": null,
+    "cel": null,
+    "obsvenda": null,
+    "idoper": 5,
+    "idvende": 102
+  }
 }
 ```
 

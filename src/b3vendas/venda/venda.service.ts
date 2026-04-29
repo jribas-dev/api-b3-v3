@@ -10,6 +10,7 @@ import { TenantService } from 'src/tenant/tenant.service';
 import { SellerContextService } from 'src/b3vendas/shared/seller-context.service';
 import { OperacaoService } from 'src/b3vendas/operacao/operacao.service';
 import { FormasPagamentoService } from 'src/b3vendas/formas-pagamento/formas-pagamento.service';
+import { ResponseClienteInfoDto } from 'src/b3vendas/cliente/dto/response-cliente-info.dto';
 import { VendaEntity } from './entities/venda.entity';
 import { VendaCaixaEntity } from './entities/venda-caixa.entity';
 import { CreateVendaDto } from './dto/create-venda.dto';
@@ -36,6 +37,32 @@ type VendaItemRow = {
   qtde: string | number;
   unitario: string | number;
   total: string | number;
+};
+
+type ClienteRow = {
+  id: number;
+  tipopessoa: string;
+  razao: string;
+  fantasia: string | null;
+  docfed: string | null;
+  docformatado: string | null;
+  docest: string | null;
+  email: string | null;
+  emailnfe: string | null;
+  emailcob: string | null;
+  site: string | null;
+  cep: string | null;
+  endereco: string | null;
+  nroend: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  uf: string | null;
+  fone: string | null;
+  fone2: string | null;
+  cel: string | null;
+  obsvenda: string | null;
+  idoper: number | null;
+  idvende: number | null;
 };
 
 type FormaCondRow = { idforma: number | null; idcond: number | null };
@@ -151,10 +178,17 @@ export class VendaService {
     const ds = await this.tenantService.getDataSource(dbId);
     const venda = await this.loadVendaVinculada(ds, dbId, userId, id);
 
-    const [clienteRow] = await ds.query<{ razao: string | null }[]>(
-      `SELECT razao FROM cnt WHERE id = ? LIMIT 1`,
-      [venda.idcli],
-    );
+    const [clienteRow] = venda.idcli
+      ? await ds.query<ClienteRow[]>(
+          `SELECT id, tipopessoa, razao, fantasia, docfed,
+                  format_docfed(docfed) AS docformatado,
+                  docest, email, emailnfe, emailcob, site, cep,
+                  endereco, nroend, bairro, cidade, uf,
+                  fone, fone2, cel, obsvenda, idoper, idvende
+             FROM cnt WHERE id = ? LIMIT 1`,
+          [venda.idcli],
+        )
+      : [];
 
     const itens = await ds.query<VendaItemRow[]>(
       `SELECT a.seq, a.idprod, b.nome AS nomeProduto,
@@ -195,6 +229,9 @@ export class VendaService {
           total: toNumber(it.total),
         }),
       ),
+      cliente: clienteRow
+        ? plainToInstance(ResponseClienteInfoDto, clienteRow)
+        : null,
     });
   }
 

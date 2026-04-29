@@ -1,4 +1,5 @@
 import { Exclude, Expose } from 'class-transformer';
+import { ResponseClienteInfoDto } from 'src/b3vendas/cliente/dto/response-cliente-info.dto';
 
 @Exclude()
 export class ResponseVendaResumoDto {
@@ -91,4 +92,7 @@ export class ResponseVendaDetalheDto {
 
   @Expose()
   itens: ResponseVendaItemDto[];
+
+  @Expose()
+  cliente: ResponseClienteInfoDto | null;
 }
