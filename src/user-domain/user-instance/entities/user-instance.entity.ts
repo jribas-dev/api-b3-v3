@@ -4,10 +4,18 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  BeforeInsert,
+  BeforeUpdate,
 } from 'typeorm';
 import { UserEntity } from 'src/user-domain/user/entities/user.entity';
 import { InstanceEntity } from 'src/user-domain/instance/entities/instance.entity';
-import { RoleBack, RoleFront } from '../enums/user-instance-roles.enum';
+import {
+  RoleBack,
+  RoleFront,
+  RoleFrontEnum,
+} from '../enums/user-instance-roles.enum';
+import { RoleFrontTransformer } from '../transformers/role-front.transformer';
+import { assertRoleFrontConsistent } from '../validators/role-front.validator';
 
 @Entity({ name: 'user_instances' })
 export class UserInstanceEntity {
@@ -31,9 +39,10 @@ export class UserInstanceEntity {
   roleback: RoleBack;
 
   @Column({
-    type: 'enum',
-    enum: RoleFront,
-    default: RoleFront.NOTALLOW,
+    type: 'varchar',
+    length: 255,
+    default: RoleFrontEnum.NOTALLOW,
+    transformer: RoleFrontTransformer,
   })
   rolefront: RoleFront;
 
@@ -53,4 +62,10 @@ export class UserInstanceEntity {
   })
   @JoinColumn({ name: 'dbId' })
   instance: InstanceEntity;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  validateRoleFront(): void {
+    assertRoleFrontConsistent(this.rolefront);
+  }
 }

@@ -9,7 +9,7 @@ import {
 import { AppService } from './app.service';
 import {
   RoleBack,
-  RoleFront,
+  RoleFrontEnum,
 } from './user-domain/user-instance/enums/user-instance-roles.enum';
 import { JwtGuard } from './auth/guards/jwt.guard';
 
@@ -21,7 +21,7 @@ type EnumMap = {
 export class AppController {
   private readonly enumMap: EnumMap = {
     roleback: RoleBack,
-    rolefront: RoleFront,
+    rolefront: RoleFrontEnum,
     // Se quiser adicionar mais enums no futuro, é só colocar aqui.
   };
   constructor(private readonly appService: AppService) {}
@@ -43,7 +43,7 @@ export class AppController {
         dbId: string | undefined;
         instanceName: string | undefined;
         roleBack: string | undefined;
-        roleFront: string | undefined;
+        roleFront: string[] | undefined;
       };
     },
   ) {

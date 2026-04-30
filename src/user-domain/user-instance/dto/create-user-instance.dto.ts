@@ -1,11 +1,17 @@
 import {
+  ArrayNotEmpty,
+  IsArray,
   IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
-import { RoleBack, RoleFront } from '../enums/user-instance-roles.enum';
+import {
+  RoleBack,
+  RoleFront,
+  RoleFrontEnum,
+} from '../enums/user-instance-roles.enum';
 import { OmitType } from '@nestjs/mapped-types';
 import { UserInstanceEntity } from '../entities/user-instance.entity';
 
@@ -13,6 +19,7 @@ export class CreateUserInstanceDto extends OmitType(UserInstanceEntity, [
   'id',
   'user',
   'instance',
+  'validateRoleFront',
 ]) {
   @IsString()
   @IsNotEmpty()
@@ -29,6 +36,8 @@ export class CreateUserInstanceDto extends OmitType(UserInstanceEntity, [
   @IsEnum(RoleBack)
   roleback: RoleBack;
 
-  @IsEnum(RoleFront)
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsEnum(RoleFrontEnum, { each: true })
   rolefront: RoleFront;
 }

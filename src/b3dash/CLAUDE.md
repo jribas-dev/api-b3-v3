@@ -124,7 +124,7 @@ Paginação: `page` default 1, `limit` default 50 (max 200). `total` via query `
 
 ## Guards e Autorização
 
-Todos os endpoints aplicam `JwtGuard` + `UserInstanceGuard` (via `@UseGuards` no controller). A autorização fina por empresa acontece no service via `validateIdemp(dbId, userId, idemp)` → compara o `idemp` recebido com a lista de `EmpService.listEmitentes`; se não bater → `ForbiddenException`.
+Todos os endpoints aplicam `JwtGuard` + `UserInstanceGuard` + `RolesFrontGuard` (via `@UseGuards` no controller) e exigem `@RolesFront(RoleFrontEnum.ADMIN)` — apenas usuários com o papel administrativo enxergam o dashboard. A autorização fina por empresa acontece no service via `validateIdemp(dbId, userId, idemp)` → compara o `idemp` recebido com a lista de `EmpService.listEmitentes`; se não bater → `ForbiddenException`.
 
 ## Decisões de Arquitetura
 

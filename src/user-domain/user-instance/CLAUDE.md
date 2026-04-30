@@ -13,7 +13,7 @@ Gerencia o **vínculo entre usuário e tenant (instance)**. É a tabela de junç
 | `dbId` | string (CUID2) | FK → instance (tenant) |
 | `idBackendUser` | int \| null | ID do usuário no sistema legado do tenant (BackOffice desktop) |
 | `roleback` | RoleBack enum | Papel no BackOffice. Default: `user` |
-| `rolefront` | RoleFront enum | Papel no Web app. Default: `notallow` |
+| `rolefront` | RoleFront (`RoleFrontEnum[]`) | Conjunto de papéis no Web app, persistido como string separada por vírgula via `RoleFrontTransformer`. Default: `['notallow']` |
 | `isActive` | boolean | Vínculo ativo/inativo. Default: `true` |
 
 Relações carregadas com `eager: true`: `user` e `instance`.  
@@ -29,13 +29,21 @@ Relações carregadas com `eager: true`: `user` e `instance`.
 | `user` | Usuário padrão |
 | `notallow` | Sem acesso ao BackOffice |
 
-### `RoleFront` — Acesso ao Web App
-| Valor | Descrição |
-|---|---|
-| `supervisor` | Supervisor |
-| `saler` | Vendedor |
-| `buyer` | Comprador |
-| `notallow` | Sem acesso ao Web app |
+### `RoleFrontEnum` — Papéis no Web App
+| Valor | Significado | Acesso |
+|---|---|---|
+| `admin` | Administrativo | Total a [`b3dash`](../../b3dash/CLAUDE.md). É também o papel front que satisfaz `AdminGuard`. |
+| `supersaler` | Supervisor de vendas | Total a [`b3vendas`](../../b3vendas/CLAUDE.md): vê equipe inteira, pode configurar equipe, criar/alterar/remover cliente. |
+| `saler` | Vendedor de campo | Parcial a `b3vendas`: só vê a si mesmo (equipe e métricas), **não pode** configurar equipe nem criar/alterar/remover cliente. |
+| `inventory` | Estoquista | Reservado para módulo futuro. |
+| `buyer` | Comprador externo | Reservado para módulo futuro (catálogo + montagem de pedidos pelo próprio cliente). |
+| `notallow` | Sem acesso | Bloqueia tudo. |
+
+`RoleFront` é o tipo array (`RoleFrontEnum[]`). Um vínculo pode acumular vários papéis distintos (ex.: `['admin','supersaler']`), gravados no banco como CSV (`'admin,supersaler'`); o `RoleFrontTransformer` converte ida e volta. Comparações no código usam `.includes()` / `.some()`.
+
+#### Regra de exclusividade
+
+`SALER` e `SUPERSALER` **não podem coexistir** no mesmo vínculo — são níveis hierárquicos sobre o mesmo módulo. A validação está no helper [`assertRoleFrontConsistent`](./validators/role-front.validator.ts), invocado pelos hooks `@BeforeInsert` / `@BeforeUpdate` em `UserInstanceEntity` e `UserPreInstanceEntity`. Tentativas de persistir o par lançam `BadRequestException` antes do INSERT/UPDATE.
 
 ## Endpoints
 

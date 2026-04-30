@@ -14,7 +14,7 @@ import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { UserInstanceGuard } from 'src/auth/guards/user-instance.guard';
 import { RolesFrontGuard } from 'src/auth/guards/roles-front.guard';
 import { RolesFront } from 'src/auth/decorators/roles-front.decorator';
-import { RoleFront } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
+import { RoleFrontEnum } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 import { TenantAwareCacheInterceptor } from '../shared/tenant-aware-cache.interceptor';
 import { GraphQueryDto } from '../shared/dto/graph-query.dto';
 import { ListQueryDto } from '../shared/dto/list-query.dto';
@@ -24,7 +24,7 @@ type JwtRequest = { user: { userId: string; dbId: string } };
 
 @Controller('b3dash/estoque')
 @UseGuards(JwtGuard, UserInstanceGuard, RolesFrontGuard)
-@RolesFront(RoleFront.SUPER)
+@RolesFront(RoleFrontEnum.ADMIN)
 export class EstoqueController {
   constructor(private readonly estoqueService: EstoqueService) {}
 

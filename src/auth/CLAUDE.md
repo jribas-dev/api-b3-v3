@@ -90,8 +90,8 @@ Herda os campos acima e acrescenta:
 |----------------|------------|------------------------------------|
 | `instanceName` | string     | Nome da instância tenant           |
 | `dbId`         | string     | ID da instância (discriminador)    |
-| `roleBack`     | RoleBack   | Role de acesso backend             |
-| `roleFront`    | RoleFront  | Role de acesso frontend            |
+| `roleBack`     | RoleBack         | Role de acesso backend             |
+| `roleFront`    | RoleFrontEnum[]  | Lista de roles de acesso frontend  |
 
 ---
 
@@ -103,18 +103,18 @@ Existem cinco guards canônicos mais o `RootGuard` (caso especial para operaçõ
 |---------------------|------------------------|--------------------------|
 | `JwtGuard`          | Assinatura válida + não na blacklist (etapa 1 ou 2) | 401 Unauthorized |
 | `UserInstanceGuard` | `dbId` presente (token etapa 2 — usuário selecionou tenant) | 403 Forbidden |
-| `AdminGuard`        | `isRoot === true` OU `roleBack ∈ {admin, supervisor}` OU `roleFront === supervisor` | 403 Forbidden |
+| `AdminGuard`        | `isRoot === true` OU `roleBack ∈ {admin, supervisor}` OU `roleFront` contém `admin` | 403 Forbidden |
 | `RolesBackGuard`    | `roleBack` ∈ roles declaradas via `@RolesBack(...)` (dinâmico) | 403 Forbidden |
-| `RolesFrontGuard`   | `roleFront` ∈ roles declaradas via `@RolesFront(...)` (dinâmico) | 403 Forbidden |
+| `RolesFrontGuard`   | `roleFront` (array) intersecta com roles declaradas via `@RolesFront(...)` (dinâmico) | 403 Forbidden |
 | `RootGuard`         | `isRoot === true` (restrição máxima) | 403 Forbidden |
 
 ### Uso canônico de cada guard
 
 - **`JwtGuard`** — aplicar a toda rota autenticada (etapa 1 ou 2).
 - **`UserInstanceGuard`** — somar ao `JwtGuard` quando a rota exige tenant selecionado (acesso a `dbId`/roles).
-- **`AdminGuard`** — rotas administrativas que aceitam root global **ou** administradores do tenant (admin/supervisor backend, supervisor frontend). Substitui o padrão antigo de `@RolesBack(ADMIN, SUPER) + @AllowRoot()`.
+- **`AdminGuard`** — rotas administrativas que aceitam root global **ou** administradores do tenant (admin/supervisor backend, ou `admin` presente no array `roleFront`). Substitui o padrão antigo de `@RolesBack(ADMIN, SUPER) + @AllowRoot()`.
 - **`RolesBackGuard`** + `@RolesBack(...)` — testar dinamicamente se `roleBack` do usuário pertence ao conjunto declarado. **Não** faz bypass para root; se a rota deve permitir root, use `AdminGuard` ou inclua-o em guards compostos.
-- **`RolesFrontGuard`** + `@RolesFront(...)` — idem para `roleFront`.
+- **`RolesFrontGuard`** + `@RolesFront(...)` — idem para `roleFront`, mas como `roleFront` é array, o guard aprova quando há **interseção** entre os papéis do usuário e os declarados.
 - **`RootGuard`** — rotas restritas exclusivamente ao superadmin global (CRUD de instances, user-instances, sys-files, sql-files etc.).
 
 **Ordem típica em endpoints protegidos:**
@@ -128,7 +128,7 @@ Existem cinco guards canônicos mais o `RootGuard` (caso especial para operaçõ
 
 // Rota com RBAC dinâmico por roleFront
 @UseGuards(JwtGuard, UserInstanceGuard, RolesFrontGuard)
-@RolesFront(RoleFront.SUPER, RoleFront.SALER)
+@RolesFront(RoleFrontEnum.SUPERSALER, RoleFrontEnum.SALER)
 
 // Rota root-exclusiva
 @UseGuards(JwtGuard, RootGuard)

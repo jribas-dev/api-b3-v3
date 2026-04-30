@@ -19,7 +19,7 @@ instance (tenant)
   └── user_pre_instances ←── user_pre (convite pendente)
 ```
 
-- `user_instances` é a tabela de junção central — um usuário pode estar vinculado a múltiplos tenants, cada um com `roleBack` e `roleFront` independentes.
+- `user_instances` é a tabela de junção central — um usuário pode estar vinculado a múltiplos tenants, cada um com `roleBack` e `roleFront` (array de `RoleFrontEnum`) independentes.
 - `user_pre` é efêmero: ao concluir o convite, seus dados migram para `user` + `user_instances` e o registro é deletado.
 - Inativação em cascata: desativar um `user` propaga `isActive: false` para todos os seus `user_instances`; desativar uma `instance` propaga o mesmo para todos os seus `user_instances`.
 

@@ -17,7 +17,7 @@ import { RolesFront } from 'src/auth/decorators/roles-front.decorator';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RolesFrontGuard } from 'src/auth/guards/roles-front.guard';
 import { UserInstanceGuard } from 'src/auth/guards/user-instance.guard';
-import { RoleFront } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
+import { RoleFrontEnum } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 import { ClienteService } from './cliente.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
@@ -36,13 +36,13 @@ export class ClienteController {
   }
 
   @Get('rede-sp')
-  @RolesFront(RoleFront.SUPER, RoleFront.SALER)
+  @RolesFront(RoleFrontEnum.SUPERSALER, RoleFrontEnum.SALER)
   async redeSp(@Request() req: { user: { userId: string; dbId: string } }) {
     return this.clienteService.redeSp(req.user.dbId, req.user.userId);
   }
 
   @Get('tabela')
-  @RolesFront(RoleFront.SUPER, RoleFront.SALER)
+  @RolesFront(RoleFrontEnum.SUPERSALER, RoleFrontEnum.SALER)
   async tabela(
     @Request() req: { user: { dbId: string } },
     @Query('idOper', ParseIntPipe) idOper: number,
@@ -60,6 +60,7 @@ export class ClienteController {
   }
 
   @Post()
+  @RolesFront(RoleFrontEnum.SUPERSALER)
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Request() req: { user: { userId: string; dbId: string } },
@@ -69,6 +70,7 @@ export class ClienteController {
   }
 
   @Patch(':id')
+  @RolesFront(RoleFrontEnum.SUPERSALER)
   async update(
     @Request() req: { user: { userId: string; dbId: string } },
     @Param('id', ParseIntPipe) id: number,
@@ -78,7 +80,7 @@ export class ClienteController {
   }
 
   @Delete(':id')
-  @RolesFront(RoleFront.SUPER)
+  @RolesFront(RoleFrontEnum.SUPERSALER)
   async remove(
     @Request() req: { user: { userId: string; dbId: string } },
     @Param('id', ParseIntPipe) id: number,

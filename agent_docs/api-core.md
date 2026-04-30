@@ -34,9 +34,9 @@
 |---|---|---|
 | `JwtGuard` | Token JWT válido no header `Authorization` | `401 Unauthorized` |
 | `UserInstanceGuard` | Token de **etapa 2** (campo `dbId` no payload — usuário selecionou um tenant) | `403 Forbidden` |
-| `AdminGuard` | `isRoot = true` **OU** `roleBack ∈ {admin, supervisor}` **OU** `roleFront = supervisor` | `403 Forbidden` |
+| `AdminGuard` | `isRoot = true` **OU** `roleBack ∈ {admin, supervisor}` **OU** `roleFront` (array) contém `admin` | `403 Forbidden` |
 | `RootGuard` | `isRoot = true` (superadmin global) | `403 Forbidden` |
-| `RolesFrontGuard` | `roleFront` do token pertence ao conjunto exigido pelo endpoint | `403 Forbidden` |
+| `RolesFrontGuard` | `roleFront` (array) do token **intersecta** com o conjunto exigido pelo endpoint | `403 Forbidden` |
 | `RolesBackGuard` | `roleBack` do token pertence ao conjunto exigido | `403 Forbidden` |
 
 ---
@@ -120,7 +120,7 @@ Seleciona um tenant e retorna o token de etapa 2 com roles. Máximo 10 chamadas 
 | `dbId` | string | ID do tenant selecionado |
 | `instanceName` | string | Nome da instância |
 | `roleBack` | string | Role no BackOffice: `admin \| supervisor \| user \| notallow` |
-| `roleFront` | string | Role no Web App: `supervisor \| saler \| buyer \| notallow` |
+| `roleFront` | string[] | Array de papéis no Web App, valores de `RoleFrontEnum`: `admin \| supersaler \| saler \| inventory \| buyer \| notallow`. Pode acumular múltiplos papéis (ex.: `["admin","supersaler"]`); `saler` e `supersaler` não podem coexistir |
 
 **Erros comuns:**
 
@@ -265,7 +265,7 @@ Retorna os dados do usuário autenticado a partir do payload do JWT.
   "dbId": "cuid2string",         // null/undefined se token etapa 1
   "instanceName": "Empresa X",   // null/undefined se token etapa 1
   "roleBack": "user",            // null/undefined se token etapa 1
-  "roleFront": "saler"           // null/undefined se token etapa 1
+  "roleFront": ["saler"]         // RoleFrontEnum[] — null/undefined se token etapa 1
 }
 ```
 
@@ -282,7 +282,7 @@ Retorna os valores possíveis de um enum da aplicação.
 | Param | Valores aceitos | Descrição |
 |---|---|---|
 | `enum` | `roleback` | Valores possíveis de `RoleBack` |
-| `enum` | `rolefront` | Valores possíveis de `RoleFront` |
+| `enum` | `rolefront` | Valores possíveis de `RoleFrontEnum` (cada vínculo pode acumular vários) |
 
 **Resposta `200`:**
 
@@ -291,7 +291,7 @@ Retorna os valores possíveis de um enum da aplicação.
 ["admin", "supervisor", "user", "notallow"]
 
 // GET /backend/enums/rolefront
-["supervisor", "saler", "buyer", "notallow"]
+["admin", "supersaler", "saler", "inventory", "buyer", "notallow"]
 ```
 
 ---
@@ -493,7 +493,7 @@ Cria um vínculo entre usuário e tenant.
 | `userId` | string | ✅ | CUID2 do usuário |
 | `dbId` | string | ✅ | CUID2 da instância/tenant |
 | `roleback` | string | ✅ | Role no BackOffice: `admin \| supervisor \| user \| notallow` |
-| `rolefront` | string | ✅ | Role no Web App: `supervisor \| saler \| buyer \| notallow` |
+| `rolefront` | string[] | ✅ | Array de papéis no Web App, **não vazio**. Valores: `admin \| supersaler \| saler \| inventory \| buyer \| notallow`. Regra: `saler` e `supersaler` não podem coexistir no mesmo vínculo (`400 Bad Request` em caso contrário) |
 | `idBackendUser` | integer | ❌ | ID do usuário no sistema legado do tenant (BackOffice desktop) |
 
 **Resposta `201`:**
@@ -504,11 +504,13 @@ Cria um vínculo entre usuário e tenant.
   "userId": "cuid2string",
   "dbId": "cuid2string",
   "roleback": "user",
-  "rolefront": "saler",
+  "rolefront": ["saler"],
   "idBackendUser": null,
   "isActive": true
 }
 ```
+
+> Persistência: `rolefront` é gravado como string CSV (ex.: `"admin,supersaler"`) e convertido para array via transformer. A API sempre o retorna como array.
 
 ---
 
@@ -561,7 +563,7 @@ Atualiza roles ou status de ativação de um vínculo.
 | Campo | Tipo | Descrição |
 |---|---|---|
 | `roleback` | string | Nova role no BackOffice |
-| `rolefront` | string | Nova role no Web App |
+| `rolefront` | string[] | Novo array de papéis no Web App (`RoleFrontEnum[]`, não vazio). Sujeito à mesma regra de exclusividade `saler` × `supersaler` |
 | `isActive` | boolean | Ativar/desativar o vínculo |
 
 **Resposta `200`:** vínculo atualizado.

@@ -45,7 +45,7 @@ Espelho de `user_instances` para o período de pré-cadastro.
 | `dbId` | string | FK → instance (tenant) |
 | `idBackendUser` | int \| null | ID do usuário no sistema legado do tenant |
 | `roleback` | RoleBack enum | Papel no BackOffice |
-| `rolefront` | RoleFront enum | Papel no Web |
+| `rolefront` | RoleFront (`RoleFrontEnum[]`) | Papéis no Web (CSV no banco, array em memória) |
 
 ## Endpoints
 

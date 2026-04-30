@@ -12,7 +12,7 @@
 > Guards aplicados a toda a base:
 > - `JwtGuard`
 > - `UserInstanceGuard`
-> - `RolesFrontGuard` com role `supervisor` (todos os endpoints deste módulo)
+> - `RolesFrontGuard` exigindo `RoleFrontEnum.ADMIN` no array `roleFront` do token (todos os endpoints deste módulo). Retorna `403 Forbidden` se o usuário não tiver `admin` no seu array de papéis.
 >
 > **Nenhuma escrita é realizada** — todos os endpoints são leitura (`GET`).
 

@@ -3,7 +3,10 @@ import { plainToInstance } from 'class-transformer';
 import { DataSource } from 'typeorm';
 import { SellerContextService } from 'src/b3vendas/shared/seller-context.service';
 import { TenantService } from 'src/tenant/tenant.service';
-import { RoleFront } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
+import {
+  RoleFront,
+  RoleFrontEnum,
+} from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 import { ChartDataDto } from './dto/chart-data.dto';
 import { ResponseClienteInativoDto } from './dto/response-cliente-inativo.dto';
 
@@ -194,7 +197,7 @@ export class MetricasService {
     const { vendId } = await this.sellerContextService.resolve(dbId, userId);
     const ds = await this.tenantService.getDataSource(dbId);
 
-    if (roleFront === RoleFront.SUPER) {
+    if (roleFront.includes(RoleFrontEnum.SUPERSALER)) {
       const team = await ds.query<{ idliderado: number }[]>(
         `SELECT idcntliderado AS idliderado
            FROM cntequipe
@@ -205,7 +208,7 @@ export class MetricasService {
       return { ds, vendIds: [...ids] };
     }
 
-    if (roleFront === RoleFront.SALER) {
+    if (roleFront.includes(RoleFrontEnum.SALER)) {
       return { ds, vendIds: [vendId] };
     }
 

@@ -8,7 +8,10 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { SellerContextService } from 'src/b3vendas/shared/seller-context.service';
 import { TenantService } from 'src/tenant/tenant.service';
-import { RoleFront } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
+import {
+  RoleFront,
+  RoleFrontEnum,
+} from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 import { ResponseEquipeDto } from './dto/response-equipe.dto';
 
 interface EquipeRow {
@@ -34,7 +37,7 @@ export class EquipeService {
     const { vendId } = await this.sellerContextService.resolve(dbId, userId);
     const ds = await this.tenantService.getDataSource(dbId);
 
-    if (roleFront === RoleFront.SUPER) {
+    if (roleFront.includes(RoleFrontEnum.SUPERSALER)) {
       const rows = await ds.query<EquipeRow[]>(
         `SELECT x.id, x.razao, x.cel, x.fax, x.liderado
            FROM (
@@ -53,7 +56,7 @@ export class EquipeService {
       return rows.map((r) => plainToInstance(ResponseEquipeDto, r));
     }
 
-    if (roleFront === RoleFront.SALER) {
+    if (roleFront.includes(RoleFrontEnum.SALER)) {
       const rows = await ds.query<EquipeRow[]>(
         `SELECT c.id, c.razao, c.cel, c.fax, 0 AS liderado
            FROM cnt c

@@ -1,4 +1,6 @@
 import {
+  ArrayNotEmpty,
+  IsArray,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -8,6 +10,7 @@ import {
 import {
   RoleBack,
   RoleFront,
+  RoleFrontEnum,
 } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 
 export class RelationUserPreDto {
@@ -23,7 +26,8 @@ export class RelationUserPreDto {
   @IsNotEmpty()
   roleBack: RoleBack;
 
-  @IsEnum(RoleFront)
-  @IsNotEmpty()
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsEnum(RoleFrontEnum, { each: true })
   roleFront: RoleFront;
 }

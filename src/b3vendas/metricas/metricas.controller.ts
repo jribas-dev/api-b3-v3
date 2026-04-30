@@ -3,7 +3,10 @@ import { RolesFront } from 'src/auth/decorators/roles-front.decorator';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RolesFrontGuard } from 'src/auth/guards/roles-front.guard';
 import { UserInstanceGuard } from 'src/auth/guards/user-instance.guard';
-import { RoleFront } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
+import {
+  RoleFront,
+  RoleFrontEnum,
+} from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 import { MetricasService } from './metricas.service';
 
 type AuthenticatedRequest = {
@@ -12,7 +15,7 @@ type AuthenticatedRequest = {
 
 @Controller('b3vendas/metricas')
 @UseGuards(JwtGuard, UserInstanceGuard, RolesFrontGuard)
-@RolesFront(RoleFront.SUPER, RoleFront.SALER)
+@RolesFront(RoleFrontEnum.SUPERSALER, RoleFrontEnum.SALER)
 export class MetricasController {
   constructor(private readonly metricasService: MetricasService) {}
 

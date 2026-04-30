@@ -175,12 +175,12 @@ Resumo das entities e suas tabelas:
 | Método | Rota | Descrição |
 |---|---|---|
 | `GET` | `/b3vendas/clientes/buscar?q=` | Busca clientes (mín. 2 chars, máx. 50) |
-| `GET` | `/b3vendas/clientes/rede-sp` | Clientes do vendedor ativos, UF SP ou nula, com tabela de preços (roles SUPER/SALER) |
-| `GET` | `/b3vendas/clientes/tabela?idOper=&idCli=` | Catálogo com preços e impostos pré-calculados para cliente/operação (roles SUPER/SALER) |
+| `GET` | `/b3vendas/clientes/rede-sp` | Clientes do vendedor ativos, UF SP ou nula, com tabela de preços (roles SUPERSALER/SALER) |
+| `GET` | `/b3vendas/clientes/tabela?idOper=&idCli=` | Catálogo com preços e impostos pré-calculados para cliente/operação (roles SUPERSALER/SALER) |
 | `GET` | `/b3vendas/clientes/:id` | Dados do cliente |
-| `POST` | `/b3vendas/clientes` | Criar cliente |
-| `PATCH` | `/b3vendas/clientes/:id` | Atualizar cliente |
-| `DELETE` | `/b3vendas/clientes/:id` | Remover cliente (role SUPER) |
+| `POST` | `/b3vendas/clientes` | Criar cliente (role SUPERSALER) |
+| `PATCH` | `/b3vendas/clientes/:id` | Atualizar cliente (role SUPERSALER) |
+| `DELETE` | `/b3vendas/clientes/:id` | Remover cliente (role SUPERSALER) |
 | `GET` | `/b3vendas/operacoes?idemp=` | Listar operações permitidas para a empresa |
 | `GET` | `/b3vendas/produtos/buscar?q=` | Busca produtos (mín. 2 chars, máx. 50) |
 | `GET` | `/b3vendas/produtos/:id/preco?idCli=&idOper=` | Preço do produto para cliente/operação |
@@ -202,15 +202,17 @@ Resumo das entities e suas tabelas:
 
 ## Equipe de Vendas (`/b3vendas/equipe`)
 
-Endpoint único `GET /b3vendas/equipe` que lista a equipe visível ao vendedor autenticado. O comportamento depende de `roleFront`:
+Endpoint único `GET /b3vendas/equipe` que lista a equipe visível ao vendedor autenticado. `roleFront` é um array de papéis (`RoleFrontEnum[]`). O comportamento é decidido por `.includes()`:
 
-- **`SUPER`** (supervisor): retorna o próprio líder **e** todos os vendedores subordinados. Consulta via `UNION ALL`:
+- Se o array contém **`SUPERSALER`** (supervisor de vendas): retorna o próprio líder **e** todos os vendedores subordinados. Consulta via `UNION ALL`:
   - `cnt` onde `id = vendId` — o próprio líder, com `liderado = 0`.
   - `cntequipe INNER JOIN cnt ON c.id = e.idcntliderado` onde `e.idcntlider = vendId` — liderados, com `liderado = 1`.
   - Resultado ordenado por `liderado ASC, razao ASC` (líder sempre primeiro; subordinados a seguir, em ordem alfabética).
-- **`SALER`** (vendedor): retorna uma única linha com os dados do próprio vendedor (`cnt` onde `id = vendId`), com `liderado = 0`.
+- Senão, se contém **`SALER`** (vendedor): retorna uma única linha com os dados do próprio vendedor (`cnt` onde `id = vendId`), com `liderado = 0`.
 
-Qualquer outro `roleFront` recebe `403 Forbidden` — o `RolesFrontGuard` já filtra (`@RolesFront(SUPER, SALER)`), mas o service revalida defensivamente.
+> Precedência: SUPERSALER vence SALER (na prática um usuário não pode acumular os dois — a regra de exclusividade é validada no `BeforeInsert`/`BeforeUpdate` de `UserInstanceEntity`).
+
+Qualquer outro conjunto de papéis recebe `403 Forbidden` — o `RolesFrontGuard` já filtra (`@RolesFront(SUPERSALER, SALER)`), mas o service revalida defensivamente.
 
 **Shape da resposta (`ResponseEquipeDto[]`):**
 
@@ -226,7 +228,7 @@ A tabela `cntequipe` tem chave composta `(idcntlider, idcntliderado)` — ambos 
 
 ## Métricas de Desempenho (`/b3vendas/metricas`)
 
-Submódulo read-only que expõe indicadores de performance do vendedor autenticado. Quatro endpoints `GET`, todos com `@RolesFront(SUPER, SALER)` no nível do controller:
+Submódulo read-only que expõe indicadores de performance do vendedor autenticado. Quatro endpoints `GET`, todos com `@RolesFront(SUPERSALER, SALER)` no nível do controller:
 
 | Rota | Tipo | Janela | Origem |
 |---|---|---|---|
@@ -237,11 +239,13 @@ Submódulo read-only que expõe indicadores de performance do vendedor autentica
 
 ### Escopo (resolução de `vendIds`)
 
-`MetricasService.resolveScope(dbId, userId, roleFront)` retorna a lista de IDs de vendedor a considerar:
+`MetricasService.resolveScope(dbId, userId, roleFront)` recebe o array `roleFront: RoleFrontEnum[]` e retorna a lista de IDs de vendedor a considerar:
 
-- **`SALER`** — `[vendId]` (somente o próprio).
-- **`SUPER`** — `[vendId, ...subordinados]` via `SELECT idcntliderado FROM cntequipe WHERE idcntlider = ?`.
-- Qualquer outra role lança `ForbiddenException` (defense in depth — o `RolesFrontGuard` já filtra).
+- Se o array contém **`SUPERSALER`** — `[vendId, ...subordinados]` via `SELECT idcntliderado FROM cntequipe WHERE idcntlider = ?`.
+- Senão, se contém **`SALER`** — `[vendId]` (somente o próprio).
+- Qualquer outro conjunto lança `ForbiddenException` (defense in depth — o `RolesFrontGuard` já filtra).
+
+> SALER e SUPERSALER são mutuamente exclusivos no vínculo (validação em `UserInstanceEntity.@BeforeInsert/@BeforeUpdate`).
 
 A lista é injetada nas queries via `IN (?, ?, ...)` com placeholders gerados dinamicamente. Spread no array de parâmetros: `[...vendIds]`.
 
@@ -296,8 +300,8 @@ Mesma forma do `ChartDataDto` usado em `b3dash` — DTO local no módulo (sem de
 
 Todos os endpoints exigem `JwtGuard` + `UserInstanceGuard`. Endpoints com restrição de papel aplicam também `RolesFrontGuard`:
 
-- `DELETE /clientes/:id` — role `SUPER`.
-- `GET /clientes/rede-sp` — roles `SUPER` ou `SALER`.
-- `GET /clientes/tabela` — roles `SUPER` ou `SALER`.
-- `GET /equipe` — roles `SUPER` ou `SALER`.
-- `GET /metricas/*` (todas as 4 rotas) — roles `SUPER` ou `SALER` (decorator no controller).
+- `POST /clientes`, `PATCH /clientes/:id`, `DELETE /clientes/:id` — role `SUPERSALER`.
+- `GET /clientes/rede-sp` — roles `SUPERSALER` ou `SALER`.
+- `GET /clientes/tabela` — roles `SUPERSALER` ou `SALER`.
+- `GET /equipe` — roles `SUPERSALER` ou `SALER` (subrotas POST/DELETE/sem-equipe são exclusivas de `SUPERSALER`).
+- `GET /metricas/*` (todas as 4 rotas) — roles `SUPERSALER` ou `SALER` (decorator no controller).

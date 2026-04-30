@@ -15,7 +15,10 @@ import { RolesFront } from 'src/auth/decorators/roles-front.decorator';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RolesFrontGuard } from 'src/auth/guards/roles-front.guard';
 import { UserInstanceGuard } from 'src/auth/guards/user-instance.guard';
-import { RoleFront } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
+import {
+  RoleFront,
+  RoleFrontEnum,
+} from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 import { EquipeService } from './equipe.service';
 import { CreateEquipeDto } from './dto/create-equipe.dto';
 
@@ -25,7 +28,7 @@ export class EquipeController {
   constructor(private readonly equipeService: EquipeService) {}
 
   @Get()
-  @RolesFront(RoleFront.SUPER, RoleFront.SALER)
+  @RolesFront(RoleFrontEnum.SUPERSALER, RoleFrontEnum.SALER)
   async listar(
     @Request()
     req: {
@@ -40,13 +43,13 @@ export class EquipeController {
   }
 
   @Get('sem-equipe')
-  @RolesFront(RoleFront.SUPER)
+  @RolesFront(RoleFrontEnum.SUPERSALER)
   async semEquipe(@Request() req: { user: { userId: string; dbId: string } }) {
     return await this.equipeService.semEquipe(req.user.dbId, req.user.userId);
   }
 
   @Post()
-  @RolesFront(RoleFront.SUPER)
+  @RolesFront(RoleFrontEnum.SUPERSALER)
   @HttpCode(HttpStatus.CREATED)
   async inserir(
     @Request() req: { user: { userId: string; dbId: string } },
@@ -60,7 +63,7 @@ export class EquipeController {
   }
 
   @Delete(':id')
-  @RolesFront(RoleFront.SUPER)
+  @RolesFront(RoleFrontEnum.SUPERSALER)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remover(
     @Request() req: { user: { userId: string; dbId: string } },
