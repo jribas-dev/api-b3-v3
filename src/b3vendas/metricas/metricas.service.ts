@@ -8,11 +8,13 @@ import {
   RoleFrontEnum,
 } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 import { ChartDataDto } from './dto/chart-data.dto';
+import { QueryMetricasDto } from './dto/query-metricas.dto';
 import { ResponseClienteInativoDto } from './dto/response-cliente-inativo.dto';
 
 interface SellerScope {
   ds: DataSource;
   vendIds: number[];
+  idemp: number;
 }
 
 interface PeriodoRow {
@@ -53,8 +55,14 @@ export class MetricasService {
     dbId: string,
     userId: string,
     roleFront: RoleFront,
+    query: QueryMetricasDto,
   ): Promise<ChartDataDto> {
-    const { ds, vendIds } = await this.resolveScope(dbId, userId, roleFront);
+    const { ds, vendIds, idemp } = await this.resolveScope(
+      dbId,
+      userId,
+      roleFront,
+      query,
+    );
     const placeholders = vendIds.map(() => '?').join(',');
 
     const rows = await ds.query<PeriodoRow[]>(
@@ -63,10 +71,11 @@ export class MetricasService {
          FROM venda v
         WHERE ${VENDA_ANALISE_FILTER}
           AND v.idvend IN (${placeholders})
+          AND v.idemp = ?
           AND v.dthremissao >= DATE_SUB(CURDATE(), INTERVAL 12 WEEK)
         GROUP BY periodo
         ORDER BY periodo`,
-      [...vendIds],
+      [...vendIds, idemp],
     );
 
     const labels = this.last12WeekLabels();
@@ -85,8 +94,14 @@ export class MetricasService {
     dbId: string,
     userId: string,
     roleFront: RoleFront,
+    query: QueryMetricasDto,
   ): Promise<ChartDataDto> {
-    const { ds, vendIds } = await this.resolveScope(dbId, userId, roleFront);
+    const { ds, vendIds, idemp } = await this.resolveScope(
+      dbId,
+      userId,
+      roleFront,
+      query,
+    );
     const placeholders = vendIds.map(() => '?').join(',');
 
     const rows = await ds.query<PeriodoRow[]>(
@@ -95,10 +110,11 @@ export class MetricasService {
          FROM venda v
         WHERE ${VENDA_ANALISE_FILTER}
           AND v.idvend IN (${placeholders})
+          AND v.idemp = ?
           AND v.dthremissao >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
         GROUP BY periodo
         ORDER BY periodo`,
-      [...vendIds],
+      [...vendIds, idemp],
     );
 
     const labels = this.last12MonthLabels();
@@ -115,8 +131,14 @@ export class MetricasService {
     dbId: string,
     userId: string,
     roleFront: RoleFront,
+    query: QueryMetricasDto,
   ): Promise<ChartDataDto> {
-    const { ds, vendIds } = await this.resolveScope(dbId, userId, roleFront);
+    const { ds, vendIds, idemp } = await this.resolveScope(
+      dbId,
+      userId,
+      roleFront,
+      query,
+    );
     const placeholders = vendIds.map(() => '?').join(',');
 
     const rows = await ds.query<TopClienteRow[]>(
@@ -128,11 +150,12 @@ export class MetricasService {
          JOIN cnt c ON c.id = v.idcli
         WHERE ${VENDA_ANALISE_FILTER}
           AND v.idvend IN (${placeholders})
+          AND v.idemp = ?
           AND v.dthremissao >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
         GROUP BY c.id, c.razao, c.fantasia
         ORDER BY valor DESC
         LIMIT 15`,
-      [...vendIds],
+      [...vendIds, idemp],
     );
 
     const labels = rows.map((r) => r.nome);
@@ -153,8 +176,14 @@ export class MetricasService {
     dbId: string,
     userId: string,
     roleFront: RoleFront,
+    query: QueryMetricasDto,
   ): Promise<ResponseClienteInativoDto[]> {
-    const { ds, vendIds } = await this.resolveScope(dbId, userId, roleFront);
+    const { ds, vendIds, idemp } = await this.resolveScope(
+      dbId,
+      userId,
+      roleFront,
+      query,
+    );
     const placeholders = vendIds.map(() => '?').join(',');
 
     const rows = await ds.query<ClienteInativoRow[]>(
@@ -165,17 +194,19 @@ export class MetricasService {
               c.idvende,
               (SELECT MAX(v2.dthremissao)
                  FROM venda v2
-                WHERE v2.idcli = c.id) AS ultimaVenda
+                WHERE v2.idcli = c.id
+                  AND v2.idemp = ?) AS ultimaVenda
          FROM cnt c
         WHERE c.ativo
           AND c.idvende IN (${placeholders})
           AND NOT EXISTS (
             SELECT 1 FROM venda v
              WHERE v.idcli = c.id
+               AND v.idemp = ?
                AND v.dthremissao >= DATE_SUB(CURDATE(), INTERVAL 60 DAY)
           )
         ORDER BY nome ASC`,
-      [...vendIds],
+      [idemp, ...vendIds, idemp],
     );
 
     return rows.map((r) =>
@@ -193,11 +224,54 @@ export class MetricasService {
     dbId: string,
     userId: string,
     roleFront: RoleFront,
+    { idemp, idvende, join }: QueryMetricasDto,
   ): Promise<SellerScope> {
     const { vendId } = await this.sellerContextService.resolve(dbId, userId);
     const ds = await this.tenantService.getDataSource(dbId);
 
-    if (roleFront.includes(RoleFrontEnum.SUPERSALER)) {
+    // Validate that the connected user has access to the requested company
+    const [empAccess] = await ds.query<{ ok: number }[]>(
+      `SELECT COUNT(*) AS ok
+         FROM usuemp ue
+         INNER JOIN usu u ON u.id = ue.idusu
+        WHERE u.userId = ? AND ue.idcnt = ?`,
+      [userId, idemp],
+    );
+    if (!empAccess || Number(empAccess.ok) === 0) {
+      throw new ForbiddenException('Empresa não autorizada para este usuário');
+    }
+
+    const isSuperSaler = roleFront.includes(RoleFrontEnum.SUPERSALER);
+
+    if (!isSuperSaler && !roleFront.includes(RoleFrontEnum.SALER)) {
+      throw new ForbiddenException('Perfil sem acesso às métricas de vendas');
+    }
+
+    // Validate access to the requested vendor
+    if (idvende !== vendId) {
+      if (!isSuperSaler) {
+        throw new ForbiddenException(
+          'Acesso negado: apenas supersaler pode visualizar dados de outro vendedor',
+        );
+      }
+      const [inTeam] = await ds.query<{ ok: number }[]>(
+        `SELECT COUNT(*) AS ok
+           FROM cntequipe
+          WHERE idcntlider = ? AND idcntliderado = ?`,
+        [vendId, idvende],
+      );
+      if (!inTeam || Number(inTeam.ok) === 0) {
+        throw new ForbiddenException('Vendedor não pertence à sua equipe');
+      }
+    }
+
+    // join=true: full team scope (only supersaler can use)
+    if (join) {
+      if (!isSuperSaler) {
+        throw new ForbiddenException(
+          'Acesso negado: apenas supersaler pode utilizar o modo join',
+        );
+      }
       const team = await ds.query<{ idliderado: number }[]>(
         `SELECT idcntliderado AS idliderado
            FROM cntequipe
@@ -205,14 +279,10 @@ export class MetricasService {
         [vendId],
       );
       const ids = new Set<number>([vendId, ...team.map((t) => t.idliderado)]);
-      return { ds, vendIds: [...ids] };
+      return { ds, vendIds: [...ids], idemp };
     }
 
-    if (roleFront.includes(RoleFrontEnum.SALER)) {
-      return { ds, vendIds: [vendId] };
-    }
-
-    throw new ForbiddenException('Perfil sem acesso às métricas de vendas');
+    return { ds, vendIds: [idvende], idemp };
   }
 
   private toNumber(value: string | number | null | undefined): number {

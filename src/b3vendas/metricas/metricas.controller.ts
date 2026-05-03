@@ -1,4 +1,4 @@
-import { Controller, Get, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
 import { RolesFront } from 'src/auth/decorators/roles-front.decorator';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RolesFrontGuard } from 'src/auth/guards/roles-front.guard';
@@ -8,6 +8,7 @@ import {
   RoleFrontEnum,
 } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 import { MetricasService } from './metricas.service';
+import { QueryMetricasDto } from './dto/query-metricas.dto';
 
 type AuthenticatedRequest = {
   user: { userId: string; dbId: string; roleFront: RoleFront };
@@ -20,38 +21,54 @@ export class MetricasController {
   constructor(private readonly metricasService: MetricasService) {}
 
   @Get('vendas-semanais')
-  async vendasSemanais(@Request() req: AuthenticatedRequest) {
+  async vendasSemanais(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: QueryMetricasDto,
+  ) {
     return this.metricasService.vendasSemanais(
       req.user.dbId,
       req.user.userId,
       req.user.roleFront,
+      query,
     );
   }
 
   @Get('vendas-mensais')
-  async vendasMensais(@Request() req: AuthenticatedRequest) {
+  async vendasMensais(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: QueryMetricasDto,
+  ) {
     return this.metricasService.vendasMensais(
       req.user.dbId,
       req.user.userId,
       req.user.roleFront,
+      query,
     );
   }
 
   @Get('top-clientes-ativos')
-  async topClientesAtivos(@Request() req: AuthenticatedRequest) {
+  async topClientesAtivos(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: QueryMetricasDto,
+  ) {
     return this.metricasService.topClientesAtivos(
       req.user.dbId,
       req.user.userId,
       req.user.roleFront,
+      query,
     );
   }
 
   @Get('clientes-inativos')
-  async clientesInativos(@Request() req: AuthenticatedRequest) {
+  async clientesInativos(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: QueryMetricasDto,
+  ) {
     return this.metricasService.clientesInativos(
       req.user.dbId,
       req.user.userId,
       req.user.roleFront,
+      query,
     );
   }
 }
