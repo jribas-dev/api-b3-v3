@@ -93,6 +93,12 @@ export class VendaService {
     const operacao = await this.operacaoService.findOneOrFail(dbId, dto.idOper);
 
     const ds = await this.tenantService.getDataSource(dbId);
+
+    const [vendedor] = await ds.query<{ idcomi: number | null }[]>(
+      `SELECT idcomi FROM cnt WHERE id = ? LIMIT 1`,
+      [vendId],
+    );
+
     const repo = ds.getRepository(VendaEntity);
 
     const entity = repo.create({
@@ -103,6 +109,7 @@ export class VendaService {
       idcli: dto.idCli,
       idvend: vendId,
       idemp: dto.idemp,
+      idcomi: vendedor?.idcomi ?? null,
       plataforma: 'SALESFORCE',
       processo: 'B3PED.exe',
       ultimousu: usuId,

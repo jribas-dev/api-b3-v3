@@ -132,6 +132,9 @@ export class VendaEntity {
   processo: string | null;
 
   @Column({ type: 'int', unsigned: true, nullable: true })
+  idcomi: number | null;
+
+  @Column({ type: 'int', unsigned: true, nullable: true })
   ultimousu: number | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
