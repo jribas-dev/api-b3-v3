@@ -21,8 +21,7 @@ export class TaxCalculatorService {
 
   calcIpi(subtotal: number, ipialiq: number): number {
     if (ipialiq <= 0) return 0;
-    const base = this.round((subtotal * ipialiq) / 100);
-    return this.round(base * (ipialiq / 100));
+    return this.round(subtotal * (ipialiq / 100));
   }
 
   calcSt(
