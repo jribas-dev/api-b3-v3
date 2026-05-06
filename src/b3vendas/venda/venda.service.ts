@@ -256,22 +256,23 @@ export class VendaService {
       );
     }
 
-    const operForma = await this.formasPagamentoService.operacaoDaForma(
-      dbId,
-      dto.idForma,
-    );
-
     await ds.transaction(async (tx) => {
       await tx.delete(VendaCaixaEntity, { idvenda: id });
-      await tx.insert(VendaCaixaEntity, {
-        idvenda: id,
-        idforma: dto.idForma,
-        seq: 1,
-        valor: venda.vlrtotal,
-        idcond: dto.idCond,
-        operacao: operForma,
-        baixado: true,
-      });
+      if (dto.idForma) {
+        const operForma = await this.formasPagamentoService.operacaoDaForma(
+          dbId,
+          dto.idForma,
+        );
+        await tx.insert(VendaCaixaEntity, {
+          idvenda: id,
+          idforma: dto.idForma,
+          seq: 1,
+          valor: venda.vlrtotal,
+          idcond: dto.idCond ?? null,
+          operacao: operForma,
+          baixado: true,
+        });
+      }
 
       if (dto.obsInter !== undefined) {
         await tx.update(VendaEntity, { id }, { obsinter: dto.obsInter });
