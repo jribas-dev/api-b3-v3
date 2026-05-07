@@ -666,8 +666,8 @@ Registra o pagamento do pedido em `vendacaixa`. Em uma transação:
 
 | Campo | Tipo | Obrigatório |
 |---|---|---|
-| `idForma` | int (≥1) | ✅ — obter de `GET /pedidos/:id/formas-disponiveis` |
-| `idCond` | int (≥1) | ✅ — obter de `GET /pedidos/:id/condicoes-disponiveis` |
+| `idForma` | int (≥1) | ❌ — obter de `GET /pedidos/:id/formas-disponiveis` |
+| `idCond` | int (≥1) | ❌ — obter de `GET /pedidos/:id/condicoes-disponiveis` |
 | `obsInter` | string | ❌ (máx. 255) |
 
 **Resposta `200`:**
