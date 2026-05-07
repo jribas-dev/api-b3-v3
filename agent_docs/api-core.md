@@ -384,6 +384,8 @@ Atualiza dados do usuário. Todos os campos são opcionais.
 | `email` | string | Novo e-mail |
 | `phone` | string | Novo telefone |
 | `password` | string | Nova senha (mínimo 8 caracteres) |
+| `isActive` | boolean | Usuário Ativo |
+
 
 **Resposta `200`:** usuário atualizado (mesmo shape de `POST /users`).
 
