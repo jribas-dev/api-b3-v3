@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { UserInstanceService } from './user-instance.service';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
-import { RootGuard } from 'src/auth/guards/root.guard';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { CreateUserInstanceDto } from './dto/create-user-instance.dto';
 import { UpdateUserInstanceDto } from './dto/update-user-instance.dto';
 
@@ -25,7 +25,7 @@ import { UpdateUserInstanceDto } from './dto/update-user-instance.dto';
 export class UserInstanceController {
   constructor(private readonly userInstanceService: UserInstanceService) {}
 
-  @UseGuards(RootGuard)
+  @UseGuards(AdminGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() data: CreateUserInstanceDto) {
@@ -46,7 +46,7 @@ export class UserInstanceController {
     return this.userInstanceService.findByUser(userId);
   }
 
-  @UseGuards(RootGuard)
+  @UseGuards(AdminGuard)
   @Get('db/:dbId')
   async findByDb(@Param('dbId') dbId: string) {
     return this.userInstanceService.findByDb(dbId);
@@ -69,7 +69,7 @@ export class UserInstanceController {
     return userInstance;
   }
 
-  @UseGuards(RootGuard)
+  @UseGuards(AdminGuard)
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -78,7 +78,7 @@ export class UserInstanceController {
     return this.userInstanceService.update(id, updates);
   }
 
-  @UseGuards(RootGuard)
+  @UseGuards(AdminGuard)
   @Delete(':id')
   async delete(@Param('id', ParseIntPipe) id: number) {
     await this.userInstanceService.delete(id);
