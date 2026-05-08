@@ -12,7 +12,8 @@
 > Guards aplicados a toda a base:
 > - `JwtGuard`
 > - `UserInstanceGuard`
-> - `RolesFrontGuard` exigindo `RoleFrontEnum.ADMIN` no array `roleFront` do token (todos os endpoints deste módulo). Retorna `403 Forbidden` se o usuário não tiver `admin` no seu array de papéis.
+> - **Faturamento, Financeiro, Estoque** — `RolesFrontGuard` exigindo `RoleFrontEnum.ADMIN` no array `roleFront` do token. Retorna `403 Forbidden` se o usuário não tiver `admin` no seu array de papéis.
+> - **Usu** — `AdminGuard` (aceita `isRoot`, `roleBack ∈ {admin, supervisor}` ou `roleFront` contendo `admin`).
 >
 > **Nenhuma escrita é realizada** — todos os endpoints são leitura (`GET`).
 
@@ -26,6 +27,7 @@
 - [Faturamento](#faturamento)
 - [Financeiro](#financeiro)
 - [Estoque](#estoque)
+- [Usu](#usu)
 
 ---
 
@@ -689,6 +691,37 @@ Grid de compras agrupadas por fornecedor no período.
 
 ---
 
+## Usu
+
+Base: `/b3dash/usu`
+
+Listagem de usuários do sistema legado do tenant (tabela `usu`) — usada pelo back-office para vincular usuários da API a contas do legado (campo `usu.userId`).
+
+> **Guard:** `AdminGuard` (não usa `RolesFrontGuard`). Aceita `isRoot`, `roleBack ∈ {admin, supervisor}` ou `roleFront` contendo `admin`.
+
+---
+
+### `GET /b3dash/usu/list/backoffice`
+
+Lista os usuários do back-office do tenant que ainda **não** estão vinculados a um usuário da API e que estão **ativos**.
+
+**Query:** nenhuma.
+
+**Filtro SQL aplicado:** `userId IS NULL AND NOT inativo` na tabela `usu`. Ordenado por `login`.
+
+**Resposta `200`:**
+
+```jsonc
+[
+  { "id": 12, "login": "carlos.silva" },
+  { "id": 27, "login": "maria.santos" }
+]
+```
+
+> A resposta é um array simples (não usa `GridResponseDto`) — sem paginação, sem `total`. Útil para popular um `<select>` no front durante o vínculo de um novo usuário da API a uma conta do legado.
+
+---
+
 ## Tabela Resumo dos Endpoints
 
 ### Faturamento
@@ -732,5 +765,11 @@ Grid de compras agrupadas por fornecedor no período.
 | `GET /b3dash/estoque/list/lancamentos` | Grid | — | ✅ |
 | `GET /b3dash/estoque/list/por-produto` | Grid | — | ❌ snapshot |
 | `GET /b3dash/estoque/list/por-fornecedor` | Grid | — | ✅ |
+
+### Usu
+
+| Endpoint | Tipo | Guard | Usa `periodo`? |
+|---|---|---|---|
+| `GET /b3dash/usu/list/backoffice` | Lista simples | `AdminGuard` | ❌ |
 
 > **"snapshot"** = endpoint retorna posição atual, independente do período informado. O parâmetro `periodo` ainda deve ser enviado (validação) mas não afeta o resultado.

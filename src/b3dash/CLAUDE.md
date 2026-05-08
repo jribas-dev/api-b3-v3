@@ -1,6 +1,6 @@
 # b3dash
 
-Módulo de **dashboard multi-tenant** que expõe endpoints de leitura para montagem de **gráficos e grids** em três domínios: Faturamento, Financeiro e Estoque. Todos os dados vêm do banco do tenant (via `TenantService`). Nenhuma escrita é realizada.
+Módulo de **dashboard multi-tenant** que expõe endpoints de leitura para montagem de **gráficos e grids** em três domínios: Faturamento, Financeiro e Estoque, além de um sub-módulo auxiliar `usu` para listagem de usuários do legado. Todos os dados vêm do banco do tenant (via `TenantService`). Nenhuma escrita é realizada.
 
 ## Responsabilidade
 
@@ -34,11 +34,16 @@ src/b3dash/
 │   ├── financeiro.controller.ts
 │   ├── financeiro.service.ts
 │   └── dto/                               # FinReceberDto, FinPagarDto, FinMovimentoDto
-└── estoque/
-    ├── estoque.module.ts
-    ├── estoque.controller.ts
-    ├── estoque.service.ts
-    └── dto/                               # EstLancamentoDto, EstProdutoDto, EstFornecedorDto
+├── estoque/
+│   ├── estoque.module.ts
+│   ├── estoque.controller.ts
+│   ├── estoque.service.ts
+│   └── dto/                               # EstLancamentoDto, EstProdutoDto, EstFornecedorDto
+└── usu/
+    ├── usu.module.ts
+    ├── usu.controller.ts                  # 1 endpoint — list/backoffice
+    ├── usu.service.ts
+    └── dto/                               # UsuBackofficeDto
 ```
 
 ## Convenção de Rotas
@@ -124,7 +129,8 @@ Paginação: `page` default 1, `limit` default 50 (max 200). `total` via query `
 
 ## Guards e Autorização
 
-Todos os endpoints aplicam `JwtGuard` + `UserInstanceGuard` + `RolesFrontGuard` (via `@UseGuards` no controller) e exigem `@RolesFront(RoleFrontEnum.ADMIN)` — apenas usuários com o papel administrativo enxergam o dashboard. A autorização fina por empresa acontece no service via `validateIdemp(dbId, userId, idemp)` → compara o `idemp` recebido com a lista de `EmpService.listEmitentes`; se não bater → `ForbiddenException`.
+- **Faturamento, Financeiro, Estoque** — `JwtGuard` + `UserInstanceGuard` + `RolesFrontGuard` no controller, com `@RolesFront(RoleFrontEnum.ADMIN)`. Apenas usuários com o papel administrativo no array `roleFront` enxergam o dashboard. A autorização fina por empresa acontece no service via `validateIdemp(dbId, userId, idemp)` → compara o `idemp` recebido com a lista de `EmpService.listEmitentes`; se não bater → `ForbiddenException`.
+- **Usu** — `JwtGuard` + `UserInstanceGuard` + `AdminGuard`. O `AdminGuard` aceita `isRoot`, `roleBack ∈ {admin, supervisor}` ou `roleFront` contendo `admin`. Não há validação de `idemp` (a listagem é tenant-scoped, não empresa-scoped).
 
 ## Decisões de Arquitetura
 
@@ -233,6 +239,27 @@ Query extra: `status` ∈ `pago | vencido | aberto` (opcional; default = todos).
 | `por-fornecedor` | — | `idcnt`, `razao`, `docfed`, `qtdCompras`, `valorTotal`, `ultimaCompraEm` |
 
 > `lancamentos` consome `estoque` (movimentos diários); `por-produto` consome `prdsaldo` (snapshot atual — `periodo` é mantido para consistência mas não filtra); `por-fornecedor` agrega `mov` com `saidaentrada='0'`.
+
+## Endpoints — Usu (`/b3dash/usu`)
+
+Sub-módulo auxiliar para back-office. **Não** participa da convenção `graph/list` — é um endpoint simples de leitura, sem cache, sem paginação, sem `periodo` e sem `idemp`.
+
+| Endpoint | Guard | Descrição |
+|---|---|---|
+| `GET /b3dash/usu/list/backoffice` | `JwtGuard + UserInstanceGuard + AdminGuard` | Lista usuários do legado (`usu.id`, `usu.login`) que ainda não estão vinculados a um usuário da API e que estão ativos |
+
+**Query SQL:**
+```sql
+SELECT id, login
+FROM usu
+WHERE userId IS NULL
+  AND NOT inativo
+ORDER BY login
+```
+
+- `userId IS NULL` filtra contas do legado que ainda não foram associadas a um usuário da API (campo de vínculo).
+- `NOT inativo` exclui contas marcadas como inativas (`inativo` = TINYINT/BIT).
+- Resposta é um array simples `[{ id, login }, ...]` (sem `GridResponseDto`) — pensado para popular um `<select>` no front durante o vínculo de um novo usuário da API a uma conta do legado.
 
 ## Padrão de Consumo
 
