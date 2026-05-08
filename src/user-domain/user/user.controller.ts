@@ -15,6 +15,7 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { SetActiveUserDto } from './dto/set-active-user.dto';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RootGuard } from 'src/auth/guards/root.guard';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
@@ -63,6 +64,12 @@ export class UserController {
   @Get('get/me')
   async findMe(@Request() req: { user: { isRoot: boolean; userId: string } }) {
     return await this.userService.findOneById(req.user.userId);
+  }
+
+  @Patch('active')
+  @UseGuards(AdminGuard)
+  async setActive(@Body() dto: SetActiveUserDto) {
+    return await this.userService.setActive(dto.userId, dto.isActive);
   }
 
   @Patch(':id')

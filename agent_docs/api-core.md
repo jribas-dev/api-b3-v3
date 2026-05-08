@@ -437,6 +437,30 @@ Atualiza dados do usuário. Todos os campos são opcionais.
 
 ---
 
+### `PATCH /users/active`
+
+Ativa ou inativa um usuário. Ao inativar, propaga `isActive: false` para todos os vínculos `user_instances` do usuário.
+
+**Auth:** `JwtGuard` + `AdminGuard`
+
+**Body (JSON):**
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `userId` | string (CUID2) | ✅ | ID do usuário a alterar |
+| `isActive` | boolean | ✅ | `true` para ativar, `false` para inativar |
+
+**Resposta `200`:** usuário atualizado (mesmo shape de `POST /users`).
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `404` | Usuário não encontrado |
+| `403` | Token sem permissão de admin |
+
+---
+
 ### `DELETE /users/:id`
 
 Remove um usuário.

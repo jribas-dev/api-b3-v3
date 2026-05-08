@@ -34,6 +34,7 @@ Relação `OneToMany` com `user_instances` (vínculos com tenants).
 | `GET` | `/users/get/me` | JwtGuard | Retorna o próprio usuário pelo JWT |
 | `GET` | `/users/:id` | JwtGuard | Busca por userId |
 | `PATCH` | `/users/:id` | JwtGuard | Atualiza dados (Root pode editar qualquer um; usuário só edita a si mesmo) |
+| `PATCH` | `/users/active` | JwtGuard + AdminGuard | Ativa/inativa usuário pelo `userId`; propaga `isActive: false` para todos os `user_instances` ao inativar |
 | `DELETE` | `/users/:id` | JwtGuard + RootGuard | Remove usuário |
 
 ## Regras de Negócio
@@ -49,6 +50,7 @@ Relação `OneToMany` com `user_instances` (vínculos com tenants).
 
 - **`CreateUserDto`**: email, phone (BR), password (min 8), name. Omite userId, isRoot, isActive, timestamps.
 - **`UpdateUserDto`**: todos os campos de `CreateUserDto` como opcionais.
+- **`SetActiveUserDto`**: `userId` (string, obrigatório) + `isActive` (boolean, obrigatório). Exclusivo da rota `PATCH /users/active`.
 - **`ResponseUserDto`**: exclui `password` da resposta (via `class-transformer`).
 
 ## Dependências Internas

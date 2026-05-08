@@ -92,6 +92,17 @@ export class UserService {
     return plainToInstance(ResponseUserDto, updatedUser);
   }
 
+  async setActive(userId: string, isActive: boolean): Promise<ResponseUserDto> {
+    const user = await this.userRepo.findOneBy({ userId });
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    user.isActive = isActive;
+    const saved = await this.userRepo.save(user);
+    if (!isActive) {
+      await this.userInstanceRepo.update({ userId }, { isActive: false });
+    }
+    return plainToInstance(ResponseUserDto, saved);
+  }
+
   async delete(userId: string): Promise<void> {
     const user = await this.findOneById(userId);
     if (!user) {
