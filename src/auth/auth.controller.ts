@@ -62,27 +62,30 @@ export class AuthController {
       inputDto.dbId,
     );
     const deviceName = inputDto.deviceName ?? userAgent ?? null;
-    const tokenResponse = await this.authService.loginInstance(validUser, deviceName);
+    const tokenResponse = await this.authService.loginInstance(
+      validUser,
+      deviceName,
+    );
     return tokenResponse;
   }
 
   @Get('sessions')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard)
-  async listSessions(
-    @Req() req: Request & { user: { userId: string } },
-  ) {
-    const sessions = await this.refreshTokenService.findActiveByUserId(req.user.userId);
+  async listSessions(@Req() req: Request & { user: { userId: string } }) {
+    const sessions = await this.refreshTokenService.findActiveByUserId(
+      req.user.userId,
+    );
     return { sessions };
   }
 
   @Delete('sessions')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtGuard)
-  async revokeAllSessions(
-    @Req() req: Request & { user: { userId: string } },
-  ) {
-    const count = await this.refreshTokenService.revokeAllByUserId(req.user.userId);
+  async revokeAllSessions(@Req() req: Request & { user: { userId: string } }) {
+    const count = await this.refreshTokenService.revokeAllByUserId(
+      req.user.userId,
+    );
     return { message: 'Sessões revogadas com sucesso', count };
   }
 

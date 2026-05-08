@@ -14,7 +14,10 @@ export class RefreshTokenService {
     private tokenRepo: Repository<RefreshTokenEntity>,
   ) {}
 
-  async generate(userInstance: UserInstanceEntity, deviceName?: string | null): Promise<string> {
+  async generate(
+    userInstance: UserInstanceEntity,
+    deviceName?: string | null,
+  ): Promise<string> {
     const token = randomBytes(64).toString('hex');
     const expires = isDate(new Date()) ? addDays(new Date(), 7) : new Date(); // adiciona 7 dias
     expires.setHours(expires.getHours() + 1); // adiciona 1 hora
@@ -29,7 +32,9 @@ export class RefreshTokenService {
     return token;
   }
 
-  async findActiveByUserId(userId: string): Promise<Array<{ deviceName: string | null; expiresAt: Date }>> {
+  async findActiveByUserId(
+    userId: string,
+  ): Promise<Array<{ deviceName: string | null; expiresAt: Date }>> {
     const tokens = await this.tokenRepo.find({
       where: {
         userInstance: { userId },
@@ -37,7 +42,10 @@ export class RefreshTokenService {
         expiresAt: MoreThan(new Date()),
       },
     });
-    return tokens.map((t) => ({ deviceName: t.deviceName, expiresAt: t.expiresAt }));
+    return tokens.map((t) => ({
+      deviceName: t.deviceName,
+      expiresAt: t.expiresAt,
+    }));
   }
 
   async revokeAllByUserId(userId: string): Promise<number> {
@@ -80,5 +88,4 @@ export class RefreshTokenService {
       { expiresAt: LessThan(new Date()) },
     ]);
   }
-
 }

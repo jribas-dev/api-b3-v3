@@ -117,7 +117,10 @@ export class AuthService {
     };
   }
 
-  async loginInstance(userInstance: UserInstanceEntity, deviceName?: string | null) {
+  async loginInstance(
+    userInstance: UserInstanceEntity,
+    deviceName?: string | null,
+  ) {
     const payload = {
       sub: userInstance.userId,
       email: userInstance.user.email,
@@ -132,7 +135,10 @@ export class AuthService {
       expiresIn: '180m',
     });
 
-    const refreshToken = await this.refreshTokenService.generate(userInstance, deviceName);
+    const refreshToken = await this.refreshTokenService.generate(
+      userInstance,
+      deviceName,
+    );
 
     return {
       isActive: userInstance.isActive && userInstance.user.isActive,
