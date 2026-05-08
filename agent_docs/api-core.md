@@ -556,7 +556,7 @@ Gerencia a relação entre um usuário e um tenant, incluindo as roles RBAC de c
 
 Cria um vínculo entre usuário e tenant.
 
-**Auth:** `JwtGuard` + `RootGuard`
+**Auth:** `JwtGuard` + `AdminGuard`
 
 **Body (JSON):**
 
@@ -568,33 +568,46 @@ Cria um vínculo entre usuário e tenant.
 | `rolefront` | string[] | ✅ | Array de papéis no Web App, **não vazio**. Valores: `admin \| supersaler \| saler \| inventory \| buyer \| notallow`. Regra: `saler` e `supersaler` não podem coexistir no mesmo vínculo (`400 Bad Request` em caso contrário) |
 | `idBackendUser` | integer | ❌ | ID do usuário no sistema legado do tenant (BackOffice desktop) |
 
-**Resposta `201`:**
-
-```jsonc
-{
-  "id": 42,
-  "userId": "cuid2string",
-  "dbId": "cuid2string",
-  "roleback": "user",
-  "rolefront": ["saler"],
-  "idBackendUser": null,
-  "isActive": true
-}
-```
+**Resposta `201`:** objeto `ResponseUserInstanceDto` (mesmo shape de `GET /user-instances/:id`).
 
 > Persistência: `rolefront` é gravado como string CSV (ex.: `"admin,supersaler"`) e convertido para array via transformer. A API sempre o retorna como array.
+> O service força `isActive: true` na criação — o campo no body é ignorado.
 
 ---
 
 ### `GET /user-instances/user/:userId`
 
-Lista todos os tenants vinculados a um usuário.
+Lista todos os tenants vinculados a um usuário, ordenados pelo nome da instância (`ASC`).
 
-**Auth:** `JwtGuard` (usuário só pode ver seus próprios vínculos, exceto `isRoot`)
+**Auth:** `JwtGuard` (usuário só pode ver seus próprios vínculos, exceto `isRoot` que vê qualquer um)
 
 **Path params:** `userId` (CUID2 do usuário)
 
-**Resposta `200`:** array de vínculos com o shape de `POST /user-instances`, incluindo dados da instância embutidos.
+**Resposta `200`:** array de `ResponseUserInstanceDto`, com dados da instância embutidos:
+
+```jsonc
+[
+  {
+    "id": 42,
+    "userId": "cuid2string",
+    "dbId": "cuid2string",
+    "idBackendUser": null,
+    "roleback": "user",
+    "rolefront": ["saler"],
+    "isActive": true,
+    "instanceName": "Empresa X",
+    "instanceDbName": "empresa_x",
+    "instanceDbHost": "mysql.server.com"
+  }
+]
+```
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `403` | Usuário tentando acessar vínculos de outro `userId` sem ser `isRoot` |
+| `404` | Nenhum vínculo encontrado para o `userId` |
 
 ---
 
@@ -602,11 +615,11 @@ Lista todos os tenants vinculados a um usuário.
 
 Lista todos os usuários vinculados a um tenant.
 
-**Auth:** `JwtGuard` + `RootGuard`
+**Auth:** `JwtGuard` + `AdminGuard`
 
 **Path params:** `dbId` (CUID2 da instância)
 
-**Resposta `200`:** array de vínculos.
+**Resposta `200`:** array de `ResponseUserInstanceDto`.
 
 ---
 
@@ -614,11 +627,18 @@ Lista todos os usuários vinculados a um tenant.
 
 Retorna um vínculo específico pelo `id` numérico.
 
-**Auth:** `JwtGuard` (usuário só pode ver seus próprios vínculos, exceto `isRoot`)
+**Auth:** `JwtGuard` (usuário só pode ver seu próprio vínculo — comparação direta `req.user.userId === userInstance.userId`)
 
 **Path params:** `id` (integer)
 
-**Resposta `200`:** mesmo shape de `POST /user-instances`.
+**Resposta `200`:** `ResponseUserInstanceDto`.
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `403` | Vínculo pertence a outro usuário |
+| `404` | Vínculo não encontrado |
 
 ---
 
@@ -626,7 +646,7 @@ Retorna um vínculo específico pelo `id` numérico.
 
 Atualiza roles ou status de ativação de um vínculo.
 
-**Auth:** `JwtGuard` + `RootGuard`
+**Auth:** `JwtGuard` + `AdminGuard`
 
 **Path params:** `id` (integer)
 
@@ -638,7 +658,7 @@ Atualiza roles ou status de ativação de um vínculo.
 | `rolefront` | string[] | Novo array de papéis no Web App (`RoleFrontEnum[]`, não vazio). Sujeito à mesma regra de exclusividade `saler` × `supersaler` |
 | `isActive` | boolean | Ativar/desativar o vínculo |
 
-**Resposta `200`:** vínculo atualizado.
+**Resposta `200`:** vínculo atualizado (`ResponseUserInstanceDto`).
 
 ---
 
@@ -646,14 +666,14 @@ Atualiza roles ou status de ativação de um vínculo.
 
 Remove um vínculo usuário-instância.
 
-**Auth:** `JwtGuard` + `RootGuard`
+**Auth:** `JwtGuard` + `AdminGuard`
 
 **Path params:** `id` (integer)
 
 **Resposta `200`:**
 
 ```jsonc
-{ "message": "Vínculo removido com sucesso" }
+{ "message": "Usuário X Instância deletada com sucesso" }
 ```
 
 ---
@@ -663,16 +683,23 @@ Remove um vínculo usuário-instância.
 Fluxo de convite para novos usuários sem conta prévia.
 
 ```
-POST /user-pre/create → envia convite por e-mail
-GET  /user-pre/check  → frontend valida token do link
-POST /user-pre/confirm → cria conta e vínculo(s) definitivos
+POST /user-pre/create     → cria convite e envia e-mail
+GET  /user-pre/my-invites → admin lista convites enviados por ele
+POST /user-pre/resend     → reenvia e-mail (mantém token)
+POST /user-pre/regenerate → gera novo token + nova expiração e reenvia
+GET  /user-pre/check      → frontend valida token do link (público)
+POST /user-pre/confirm    → cria conta e vínculo(s) definitivos (público)
 ```
+
+> Token: `randomBytes(88).toString('hex')` — 176 caracteres. Validade: **12 horas**.
+>
+> Se o e-mail já tem `user` ativo → `401`. Se já existe `user_pre` válido → `401`. Se já existe `user_pre` expirado → o registro antigo é deletado e um novo convite é criado.
 
 ---
 
 ### `POST /user-pre/create`
 
-Cria um convite (pré-cadastro) e envia e-mail ao convidado.
+Cria um convite (pré-cadastro) e envia e-mail ao convidado. O `userId` do admin autenticado é gravado como `userInviteId`.
 
 **Auth:** `JwtGuard` + `AdminGuard`
 
@@ -680,16 +707,131 @@ Cria um convite (pré-cadastro) e envia e-mail ao convidado.
 
 | Campo | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `email` | string | ❌ | E-mail do convidado |
-| `dblist` | array | ❌ | Lista de instâncias às quais o usuário será vinculado ao confirmar |
+| `email` | string | ✅ | E-mail do convidado (formato válido). Único — não pode existir em `user` ou em `user_pre` válido |
+| `dblist` | `RelationUserPreDto[]` | ✅ | Lista (≥ 1) de tenants aos quais o usuário será vinculado ao confirmar. Cada item descreve um vínculo com suas roles |
 
-**Resposta `201`:** objeto `UserPre` criado.
+#### `RelationUserPreDto` (cada item de `dblist`)
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `dbId` | string | ✅ | CUID2 da instância/tenant ao qual o usuário será vinculado ao confirmar |
+| `roleBack` | string (enum) | ✅ | Papel no BackOffice. Valores: `admin \| supervisor \| user \| notallow` |
+| `roleFront` | string[] | ✅ | Array **não vazio** de papéis no Web App. Valores: `admin \| supersaler \| saler \| inventory \| buyer \| notallow`. Pode acumular múltiplos papéis (ex.: `["admin","supersaler"]`). Regra: `saler` e `supersaler` **não podem coexistir** no mesmo vínculo (`400 Bad Request` em caso contrário) |
+| `idBackendUser` | integer \| null | ❌ | ID do usuário no sistema legado do tenant (BackOffice desktop). Se omitido ou `null`, fica nulo |
+
+> ⚠️ A nomenclatura aqui é `roleBack` / `roleFront` (camelCase). Após o `confirm`, esses dados são copiados para `user_instances` cujos campos são `roleback` / `rolefront` (lowercase).
+
+**Exemplo de body:**
+
+```jsonc
+{
+  "email": "novo.usuario@empresa.com.br",
+  "dblist": [
+    {
+      "dbId": "cuid2string-tenant-a",
+      "roleBack": "user",
+      "roleFront": ["saler"],
+      "idBackendUser": 102
+    },
+    {
+      "dbId": "cuid2string-tenant-b",
+      "roleBack": "admin",
+      "roleFront": ["admin", "supersaler"]
+    }
+  ]
+}
+```
+
+**Resposta `201`:**
+
+```jsonc
+{
+  "userPreId": 17,
+  "email": "novo.usuario@empresa.com.br",
+  "token": "a3c1...e9f0",                  // 176 chars hex
+  "expiresAt": "2026-05-09T02:30:00.000Z", // agora + 12h
+  "userInviteId": "cuid2string-admin"      // userId do admin autenticado
+}
+```
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `401` | E-mail já existe em `user` ou em `user_pre` válido (não-expirado) |
+| `403` | Token sem permissão de admin |
+
+---
+
+### `GET /user-pre/my-invites`
+
+Lista todos os convites enviados pelo admin autenticado (filtra por `userInviteId = req.user.userId`). Retorna apenas os metadados do convite — não inclui as instâncias (`user_pre_instances`).
+
+**Auth:** `JwtGuard` + `AdminGuard`
+
+**Resposta `200`:**
+
+```jsonc
+[
+  {
+    "userPreId": 17,
+    "email": "novo.usuario@empresa.com.br",
+    "token": "a3c1...e9f0",
+    "expiresAt": "2026-05-09T02:30:00.000Z",
+    "userInviteId": "cuid2string-admin"
+  }
+]
+```
+
+---
+
+### `POST /user-pre/resend`
+
+Reenvia o e-mail de convite **sem alterar o token nem a expiração**. Útil quando o convidado simplesmente perdeu o e-mail e o token ainda é válido.
+
+**Auth:** `JwtGuard` + `AdminGuard`
+
+**Body (JSON):**
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `email` | string | ✅ | E-mail do convite a reenviar |
+
+**Resposta `204 No Content`:** sem corpo.
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `404` | Não há convite pendente para este e-mail |
+
+---
+
+### `POST /user-pre/regenerate`
+
+Gera **novo token** (e nova `expiresAt = agora + 12h`) para um convite existente e reenvia o e-mail. Usado quando o token original expirou ou foi comprometido.
+
+**Auth:** `JwtGuard` + `AdminGuard`
+
+**Body (JSON):**
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `email` | string | ✅ | E-mail do convite a regenerar |
+
+**Resposta `204 No Content`:** sem corpo.
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `404` | Não há convite para este e-mail |
 
 ---
 
 ### `GET /user-pre/check`
 
-Valida o token do link de convite (exibido antes do formulário de confirmação).
+Valida o par `email + token` do link de convite (chamado pelo frontend antes de exibir o formulário de confirmação). Se o token estiver expirado, **o registro `user_pre` é deletado** e a chamada retorna `401` — após isso, é necessário um novo `regenerate` (ou novo `create`).
 
 **Auth:** nenhuma
 
@@ -698,15 +840,37 @@ Valida o token do link de convite (exibido antes do formulário de confirmação
 | Param | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `email` | string | ✅ | E-mail do convidado |
-| `token` | string | ✅ | Token do link de convite |
+| `token` | string | ✅ | Token recebido no link do e-mail |
 
-**Resposta `200`:** resultado da validação do token.
+**Resposta `200`:** registro `user_pre` correspondente:
+
+```jsonc
+{
+  "userPreId": 17,
+  "email": "novo.usuario@empresa.com.br",
+  "token": "a3c1...e9f0",
+  "expiresAt": "2026-05-09T02:30:00.000Z",
+  "userInviteId": "cuid2string-admin"
+}
+```
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `404` | Par `email + token` não encontrado |
+| `401` | Token expirado (registro foi deletado nesta chamada) |
 
 ---
 
 ### `POST /user-pre/confirm`
 
-Finaliza o cadastro: cria o usuário definitivo, cria os vínculos de instância e remove o registro de pré-cadastro.
+Finaliza o cadastro:
+1. Revalida o token (mesmas regras de `GET /user-pre/check`).
+2. Verifica que o `user.email` do body é igual ao `check.email` (anti-tampering).
+3. Cria o `user` definitivo (com hash de senha + e-mail de boas-vindas).
+4. Para cada `user_pre_instances` registrado no convite, cria um `user_instances` com `isActive: true` (copiando `dbId`, `idBackendUser`, `roleback`, `rolefront`).
+5. Deleta o registro `user_pre` (cascateia para `user_pre_instances`).
 
 **Auth:** nenhuma
 
@@ -714,10 +878,47 @@ Finaliza o cadastro: cria o usuário definitivo, cria os vínculos de instância
 
 | Campo | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `user` | object | ❌ | Dados para criar o usuário (mesmo shape de `CreateUserDto`) |
-| `check` | object | ❌ | Dados de validação do token |
+| `user` | `CreateUserDto` | ✅ | Dados do novo usuário: `name`, `email`, `phone`, `password` (mesmo shape de `POST /users`) |
+| `check` | `CheckUserPreDto` | ✅ | `{ email, token }` — credenciais do convite |
 
-**Resposta `200`:** resultado da confirmação.
+> Apesar de declarados `@IsOptional()` no DTO, ambos os blocos são efetivamente obrigatórios — sua ausência gera erro no service.
+
+**Exemplo de body:**
+
+```jsonc
+{
+  "user": {
+    "name": "João Silva",
+    "email": "novo.usuario@empresa.com.br",
+    "phone": "+5511999999999",
+    "password": "SenhaSegura1"
+  },
+  "check": {
+    "email": "novo.usuario@empresa.com.br",
+    "token": "a3c1...e9f0"
+  }
+}
+```
+
+**Resposta `201`:** `ResponseUserDto` (sem o campo `password`):
+
+```jsonc
+{
+  "userId": "cuid2string",
+  "name": "João Silva",
+  "email": "novo.usuario@empresa.com.br",
+  "phone": "+5511999999999",
+  "isRoot": false,
+  "isActive": true
+}
+```
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `401` | `user.email ≠ check.email`, ou token inválido/expirado |
+| `404` | Convite não encontrado |
 
 ---
 
