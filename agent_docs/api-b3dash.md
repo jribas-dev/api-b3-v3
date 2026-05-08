@@ -13,9 +13,10 @@
 > - `JwtGuard`
 > - `UserInstanceGuard`
 > - **Faturamento, Financeiro, Estoque** — `RolesFrontGuard` exigindo `RoleFrontEnum.ADMIN` no array `roleFront` do token. Retorna `403 Forbidden` se o usuário não tiver `admin` no seu array de papéis.
-> - **Usu** — `AdminGuard` (aceita `isRoot`, `roleBack ∈ {admin, supervisor}` ou `roleFront` contendo `admin`).
 >
 > **Nenhuma escrita é realizada** — todos os endpoints são leitura (`GET`).
+>
+> > Operações sobre a tabela `usu` do tenant (listagem back-office e update de campos pelo próprio usuário) foram movidas para `/tenant/usu/*`. Ver [api-core.md](./api-core.md#tenant).
 
 ---
 
@@ -27,7 +28,6 @@
 - [Faturamento](#faturamento)
 - [Financeiro](#financeiro)
 - [Estoque](#estoque)
-- [Usu](#usu)
 
 ---
 
@@ -691,53 +691,6 @@ Grid de compras agrupadas por fornecedor no período.
 
 ---
 
-## Usu
-
-Base: `/b3dash/usu`
-
-Listagem de usuários do sistema legado do tenant (tabela `usu`) — usada pelo back-office para vincular usuários da API a contas do legado (campo `usu.userId`).
-
-> **Guard:** `AdminGuard` (não usa `RolesFrontGuard`). Aceita `isRoot`, `roleBack ∈ {admin, supervisor}` ou `roleFront` contendo `admin`.
-
----
-
-### `GET /b3dash/usu/list/backoffice`
-
-Lista os usuários do back-office do tenant **da empresa solicitada** (`idemp`) que ainda **não** estão vinculados a um usuário da API e que estão **ativos**.
-
-**Query:**
-
-| Param | Tipo | Obrigatório | Descrição |
-|---|---|---|---|
-| `idemp` | integer | ✅ | ID da empresa (emitente) no banco do tenant. Deve pertencer ao usuário autenticado (validado via `usuemp` em `EmpService.listEmitentes`) — caso contrário, retorna `403 Forbidden`. |
-
-**Filtro SQL aplicado:**
-
-```sql
-SELECT u.id, u.login
-FROM usu u
-INNER JOIN usuemp ue ON ue.idusu = u.id
-WHERE u.userId IS NULL
-  AND NOT u.inativo
-  AND ue.idcnt = ?      -- idemp
-ORDER BY u.login
-```
-
-**Resposta `200`:**
-
-```jsonc
-[
-  { "id": 12, "login": "carlos.silva" },
-  { "id": 27, "login": "maria.santos" }
-]
-```
-
-**Resposta `403`:** `idemp` não pertence ao usuário autenticado.
-
-> A resposta é um array simples (não usa `GridResponseDto`) — sem paginação, sem `total`. Útil para popular um `<select>` no front durante o vínculo de um novo usuário da API a uma conta do legado da empresa em foco.
-
----
-
 ## Tabela Resumo dos Endpoints
 
 ### Faturamento
@@ -781,11 +734,5 @@ ORDER BY u.login
 | `GET /b3dash/estoque/list/lancamentos` | Grid | — | ✅ |
 | `GET /b3dash/estoque/list/por-produto` | Grid | — | ❌ snapshot |
 | `GET /b3dash/estoque/list/por-fornecedor` | Grid | — | ✅ |
-
-### Usu
-
-| Endpoint | Tipo | Guard | Query obrigatória |
-|---|---|---|---|
-| `GET /b3dash/usu/list/backoffice` | Lista simples | `AdminGuard` | `idemp` |
 
 > **"snapshot"** = endpoint retorna posição atual, independente do período informado. O parâmetro `periodo` ainda deve ser enviado (validação) mas não afeta o resultado.

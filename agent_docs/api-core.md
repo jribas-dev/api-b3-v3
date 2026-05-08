@@ -973,6 +973,94 @@ Retorna o valor e a descrição de um parâmetro de configuração da tabela `cf
 
 ---
 
+### `GET /tenant/usu/backoffice`
+
+Lista os usuários do sistema legado do tenant (tabela `usu`) **da empresa solicitada** (`idemp`) que ainda **não** estão vinculados a um usuário da API (`usu.userId IS NULL`) e que estão **ativos** (`NOT usu.inativo`). Usado pelo back-office para popular o seletor de vínculo entre um usuário da API e uma conta do legado.
+
+**Auth:** `JwtGuard` + `UserInstanceGuard` + `AdminGuard` (token etapa 2)
+
+**Query params:**
+
+| Param | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `idemp` | integer | ✅ | ID da empresa (emitente) no banco do tenant. Deve pertencer ao usuário autenticado (validado via `usuemp` em `EmpService.listEmitentes`) — caso contrário, retorna `403 Forbidden` |
+
+**Filtro SQL aplicado:**
+
+```sql
+SELECT u.id, u.login
+FROM usu u
+INNER JOIN usuemp ue ON ue.idusu = u.id
+WHERE u.userId IS NULL
+  AND NOT u.inativo
+  AND ue.idcnt = ?      -- idemp
+ORDER BY u.login
+```
+
+**Resposta `200`:**
+
+```jsonc
+[
+  { "id": 12, "login": "carlos.silva" },
+  { "id": 27, "login": "maria.santos" }
+]
+```
+
+> A resposta é um array simples (sem paginação e sem `total`). Útil para popular um `<select>` no front durante o vínculo de um novo usuário da API a uma conta do legado da empresa em foco.
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `403` | `idemp` não pertence ao usuário autenticado, ou token sem permissão de admin |
+
+---
+
+### `PATCH /tenant/usu/:id`
+
+Self-service: o usuário autenticado atualiza os dados básicos do **seu próprio** registro `usu` no legado. O update só prossegue se o `usu` informado em `:id` tiver `userId = body.userId = req.user.userId`.
+
+**Auth:** `JwtGuard` + `UserInstanceGuard` (token etapa 2)
+
+**Path params:**
+
+| Param | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `id` | integer | ✅ | ID do registro `usu` no banco do tenant |
+
+**Body (JSON):**
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `userId` | string | ✅ | `userId` (CUID2) do solicitante. **Deve ser idêntico ao `userId` do token** — caso contrário, retorna `403 Forbidden`. Serve como confirmação explícita de que o usuário está atualizando o próprio registro; o valor não é gravado novamente |
+| `nome` | string | ❌ | Novo nome (máx. 60 chars) |
+| `email` | string | ❌ | Novo e-mail (formato válido, máx. 100 chars) |
+| `telefone` | string | ❌ | Novo telefone (máx. 60 chars) |
+
+> Apenas os campos enviados em `nome`, `email`, `telefone` são alterados. Campos ausentes não são tocados. Se nenhum dos três for enviado, a chamada é no-op (sem `UPDATE`).
+
+**Exemplo de body:**
+
+```jsonc
+{
+  "userId": "cuid2string-do-token",
+  "nome": "João da Silva",
+  "email": "joao@empresa.com.br",
+  "telefone": "+5511999998888"
+}
+```
+
+**Resposta `204 No Content`:** sem corpo.
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `403` | `body.userId` diferente do `userId` do token |
+| `404` | Não existe `usu` com `id = :id AND userId = body.userId` no banco do tenant |
+
+---
+
 ## Infra — AWS S3
 
 Base: `/infra/aws-s3` — `JwtGuard` em todos os endpoints.

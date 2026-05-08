@@ -1,6 +1,6 @@
 # tenant
 
-Módulo compartilhado de nível raiz que fornece **acesso multi-tenant ao banco de dados**. Não expõe endpoints próprios — é consumido por todos os módulos de domínio (`b3vendas`, futuros `b3dash`, `b3financeiro`, etc.) que precisam se conectar dinamicamente ao banco de cada tenant.
+Módulo compartilhado de nível raiz que fornece **acesso multi-tenant ao banco de dados**, além de um pequeno `TenantController` com endpoints utilitários consumidos diretamente pelo front (emitentes do usuário, leitura de `cfg`, listagem/atualização de `usu`). Também é consumido por todos os módulos de domínio (`b3vendas`, `b3dash`, futuros `b3financeiro`, etc.) que precisam se conectar dinamicamente ao banco de cada tenant.
 
 ## Responsabilidade
 
@@ -8,15 +8,20 @@ Módulo compartilhado de nível raiz que fornece **acesso multi-tenant ao banco 
 - Criar, cachear e reutilizar `DataSource` TypeORM por tenant (uma conexão por `dbId`).
 - Gerenciar o ciclo de vida dos pools: criação lazy, eviction manual e shutdown gracioso.
 - Expor leitura de parâmetros de configuração por tenant via tabela `cfg`.
+- Expor operações sobre a tabela `usu` do tenant (listagem de back-office para vínculo + update dos campos `userId`, `nome`, `email`, `telefone`).
 
 ## Estrutura de Arquivos
 
 ```
 src/tenant/
 ├── tenant.module.ts          # Módulo raiz — providers globais para toda a app
+├── tenant.controller.ts      # Endpoints: /tenant/emitentes, /tenant/cfg, /tenant/usu/*
 ├── tenant.service.ts         # Factory + cache de DataSources por dbId
 ├── cfg.service.ts            # Leitura de parâmetros tenant-scoped (tabela cfg)
+├── emp.service.ts            # Listagem de emitentes (cnt-classe emitente) do usuário
+├── usu.service.ts            # Listagem back-office + update de campos da tabela usu
 ├── tenant-entities.ts        # Registro central de entities tenant (TENANT_ENTITIES)
+├── dto/                      # DTOs de request/response do controller
 └── entities/
     └── cfg.entity.ts         # Entity da tabela cfg
 ```
@@ -104,6 +109,34 @@ export interface CfgValue {
 
 **Uso conhecido:** `OperacaoService` (b3vendas) lê `VWEBOPERCOND` para interpolar cláusula SQL dinâmica no filtro de operações permitidas por deployment. `SellerContextService` (b3vendas/shared) usa `TenantService` apenas para resolver `usuId` e `vendId` — `empId` foi removido do contexto e deve ser passado explicitamente pelo frontend.
 
+## EmpService
+
+Lista os emitentes (empresas) que o usuário autenticado enxerga no tenant. A consulta percorre `usu → usuemp → cnt` filtrando pela classe `emitente = TRUE` (via `cntclasses + cntclass`), e serve como base de **autorização por empresa** dos demais serviços (incluindo `UsuService.listBackoffice`).
+
+| Método | Comportamento |
+|---|---|
+| `listEmitentes(dbId, userId)` | Retorna `ResponseEmitenteDto[]` com `id`, `nome` (fantasia ou razão), `docfed` formatado |
+
+## UsuService
+
+Operações sobre a tabela `usu` do tenant — combinam um fluxo de back-office (vínculo via listagem) e um fluxo self-service (cada usuário mantém seus próprios dados básicos no legado).
+
+| Método | Comportamento |
+|---|---|
+| `listBackoffice(dbId, userId, idemp)` | Lista `usu.id`/`usu.login` da empresa (idemp) que ainda **não** foram vinculados a um userId da API e estão ativos. Valida `idemp` contra `EmpService.listEmitentes` (403 se a empresa não pertencer ao usuário). |
+| `update(dbId, authUserId, id, body)` | Atualiza `nome`, `email`, `telefone` do `usu` legado do próprio usuário autenticado. Valida que `body.userId === authUserId` (`Forbidden`) e que existe `usu` com `id = ? AND userId = ?` (`NotFound`). Campos ausentes no body não são tocados. |
+
+## Endpoints — TenantController
+
+Prefixo `/tenant`. Guards de classe: `JwtGuard`, `UserInstanceGuard`.
+
+| Endpoint | Guard adicional | Descrição |
+|---|---|---|
+| `GET /tenant/emitentes` | — | Lista emitentes que o usuário autenticado enxerga (via `EmpService`). |
+| `GET /tenant/cfg?param=` | — | Retorna `{ valor, descricao }` da tabela `cfg`; 404 se inexistente. |
+| `GET /tenant/usu/backoffice?idemp=` | `AdminGuard` | Lista usuários do legado da empresa solicitada disponíveis para vínculo. |
+| `PATCH /tenant/usu/:id` | — | Self-service: usuário autenticado atualiza o próprio `usu` legado. Body: `{ userId, nome?, email?, telefone? }` — `userId` é obrigatório e precisa bater com a sessão; `id` é o registro legado. Resposta `204 No Content`. |
+
 ## TENANT_ENTITIES
 
 `tenant-entities.ts` exporta o array único com **todas** as entities registradas em conexões tenant. Deve ser mantido atualizado sempre que um novo módulo de domínio adicionar entities ao banco do tenant.
@@ -134,15 +167,16 @@ export const TENANT_ENTITIES = [
 ```typescript
 @Module({
   imports: [TypeOrmModule.forFeature([InstanceEntity])],  // banco principal
-  providers: [TenantService, CfgService],
-  exports: [TenantService, CfgService],
+  controllers: [TenantController],
+  providers: [TenantService, CfgService, EmpService, UsuService],
+  exports: [TenantService, CfgService, EmpService, UsuService],
 })
 export class TenantModule {}
 ```
 
 - Importa **apenas** `InstanceEntity` do banco principal (para resolver o dbId → coordenadas de conexão).
 - Não é dinâmico (sem `forRoot` / `forFeature`).
-- Exporta ambos os serviços para consumo por qualquer módulo da aplicação.
+- Exporta `TenantService`, `CfgService`, `EmpService` e `UsuService` para consumo por qualquer módulo da aplicação.
 
 ## Padrão de Consumo
 

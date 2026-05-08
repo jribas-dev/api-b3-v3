@@ -1,6 +1,8 @@
 # b3dash
 
-Módulo de **dashboard multi-tenant** que expõe endpoints de leitura para montagem de **gráficos e grids** em três domínios: Faturamento, Financeiro e Estoque, além de um sub-módulo auxiliar `usu` para listagem de usuários do legado. Todos os dados vêm do banco do tenant (via `TenantService`). Nenhuma escrita é realizada.
+Módulo de **dashboard multi-tenant** que expõe endpoints de leitura para montagem de **gráficos e grids** em três domínios: Faturamento, Financeiro e Estoque. Todos os dados vêm do banco do tenant (via `TenantService`). Nenhuma escrita é realizada.
+
+> Operações sobre a tabela `usu` (listagem de usuários do legado e update de campos) foram movidas para o `TenantModule` (`UsuService`). Ver [src/tenant/CLAUDE.md](../tenant/CLAUDE.md).
 
 ## Responsabilidade
 
@@ -34,16 +36,11 @@ src/b3dash/
 │   ├── financeiro.controller.ts
 │   ├── financeiro.service.ts
 │   └── dto/                               # FinReceberDto, FinPagarDto, FinMovimentoDto
-├── estoque/
-│   ├── estoque.module.ts
-│   ├── estoque.controller.ts
-│   ├── estoque.service.ts
-│   └── dto/                               # EstLancamentoDto, EstProdutoDto, EstFornecedorDto
-└── usu/
-    ├── usu.module.ts
-    ├── usu.controller.ts                  # 1 endpoint — list/backoffice
-    ├── usu.service.ts
-    └── dto/                               # UsuBackofficeDto, UsuListQueryDto
+└── estoque/
+    ├── estoque.module.ts
+    ├── estoque.controller.ts
+    ├── estoque.service.ts
+    └── dto/                               # EstLancamentoDto, EstProdutoDto, EstFornecedorDto
 ```
 
 ## Convenção de Rotas
@@ -239,31 +236,6 @@ Query extra: `status` ∈ `pago | vencido | aberto` (opcional; default = todos).
 | `por-fornecedor` | — | `idcnt`, `razao`, `docfed`, `qtdCompras`, `valorTotal`, `ultimaCompraEm` |
 
 > `lancamentos` consome `estoque` (movimentos diários); `por-produto` consome `prdsaldo` (snapshot atual — `periodo` é mantido para consistência mas não filtra); `por-fornecedor` agrega `mov` com `saidaentrada='0'`.
-
-## Endpoints — Usu (`/b3dash/usu`)
-
-Sub-módulo auxiliar para back-office. **Não** participa da convenção `graph/list` — é um endpoint simples de leitura, sem cache, sem paginação e sem `periodo`. Exige `idemp` (validado contra `EmpService.listEmitentes`).
-
-| Endpoint | Guard | Query | Descrição |
-|---|---|---|---|
-| `GET /b3dash/usu/list/backoffice` | `JwtGuard + UserInstanceGuard + AdminGuard` | `idemp` (obrigatório) | Lista usuários do legado (`usu.id`, `usu.login`) da empresa solicitada que ainda não estão vinculados a um usuário da API e que estão ativos |
-
-**Query SQL:**
-```sql
-SELECT u.id, u.login
-FROM usu u
-INNER JOIN usuemp ue ON ue.idusu = u.id
-WHERE u.userId IS NULL
-  AND NOT u.inativo
-  AND ue.idcnt = ?      -- idemp validado em validateIdemp()
-ORDER BY u.login
-```
-
-- `validateIdemp` é executado antes da query: garante que o `idemp` recebido pertence ao usuário autenticado (mesma lógica dos demais sub-módulos).
-- `usuemp` é a tabela de junção `usu × cnt` que define quais empresas (emitentes) cada usuário do legado enxerga. Filtrar por `ue.idcnt = idemp` garante que apenas usuários da empresa solicitada são retornados.
-- `userId IS NULL` filtra contas do legado que ainda não foram associadas a um usuário da API (campo de vínculo).
-- `NOT inativo` exclui contas marcadas como inativas (`inativo` = TINYINT/BIT).
-- Resposta é um array simples `[{ id, login }, ...]` (sem `GridResponseDto`) — pensado para popular um `<select>` no front durante o vínculo de um novo usuário da API a uma conta do legado da empresa em foco.
 
 ## Padrão de Consumo
 
