@@ -3,6 +3,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -10,6 +11,7 @@ import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { UserInstanceGuard } from 'src/auth/guards/user-instance.guard';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { UsuService } from './usu.service';
+import { UsuListQueryDto } from './dto/usu-list-query.dto';
 
 type JwtRequest = { user: { userId: string; dbId: string } };
 
@@ -20,8 +22,11 @@ export class UsuController {
 
   @Get('list/backoffice')
   @HttpCode(HttpStatus.OK)
-  async listBackoffice(@Request() req: JwtRequest) {
-    const { dbId } = req.user;
-    return this.usuService.listBackoffice(dbId);
+  async listBackoffice(
+    @Request() req: JwtRequest,
+    @Query() query: UsuListQueryDto,
+  ) {
+    const { dbId, userId } = req.user;
+    return this.usuService.listBackoffice(dbId, userId, query.idemp);
   }
 }

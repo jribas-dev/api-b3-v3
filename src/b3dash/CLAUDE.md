@@ -43,7 +43,7 @@ src/b3dash/
     ├── usu.module.ts
     ├── usu.controller.ts                  # 1 endpoint — list/backoffice
     ├── usu.service.ts
-    └── dto/                               # UsuBackofficeDto
+    └── dto/                               # UsuBackofficeDto, UsuListQueryDto
 ```
 
 ## Convenção de Rotas
@@ -130,7 +130,7 @@ Paginação: `page` default 1, `limit` default 50 (max 200). `total` via query `
 ## Guards e Autorização
 
 - **Faturamento, Financeiro, Estoque** — `JwtGuard` + `UserInstanceGuard` + `RolesFrontGuard` no controller, com `@RolesFront(RoleFrontEnum.ADMIN)`. Apenas usuários com o papel administrativo no array `roleFront` enxergam o dashboard. A autorização fina por empresa acontece no service via `validateIdemp(dbId, userId, idemp)` → compara o `idemp` recebido com a lista de `EmpService.listEmitentes`; se não bater → `ForbiddenException`.
-- **Usu** — `JwtGuard` + `UserInstanceGuard` + `AdminGuard`. O `AdminGuard` aceita `isRoot`, `roleBack ∈ {admin, supervisor}` ou `roleFront` contendo `admin`. Não há validação de `idemp` (a listagem é tenant-scoped, não empresa-scoped).
+- **Usu** — `JwtGuard` + `UserInstanceGuard` + `AdminGuard`. O `AdminGuard` aceita `isRoot`, `roleBack ∈ {admin, supervisor}` ou `roleFront` contendo `admin`. A autorização fina por empresa segue o mesmo padrão dos demais sub-módulos: `validateIdemp(dbId, userId, idemp)` via `EmpService.listEmitentes` (`userId → usu → usuemp → cnt-emitente`); `idemp` não autorizado → `ForbiddenException`.
 
 ## Decisões de Arquitetura
 
@@ -242,24 +242,28 @@ Query extra: `status` ∈ `pago | vencido | aberto` (opcional; default = todos).
 
 ## Endpoints — Usu (`/b3dash/usu`)
 
-Sub-módulo auxiliar para back-office. **Não** participa da convenção `graph/list` — é um endpoint simples de leitura, sem cache, sem paginação, sem `periodo` e sem `idemp`.
+Sub-módulo auxiliar para back-office. **Não** participa da convenção `graph/list` — é um endpoint simples de leitura, sem cache, sem paginação e sem `periodo`. Exige `idemp` (validado contra `EmpService.listEmitentes`).
 
-| Endpoint | Guard | Descrição |
-|---|---|---|
-| `GET /b3dash/usu/list/backoffice` | `JwtGuard + UserInstanceGuard + AdminGuard` | Lista usuários do legado (`usu.id`, `usu.login`) que ainda não estão vinculados a um usuário da API e que estão ativos |
+| Endpoint | Guard | Query | Descrição |
+|---|---|---|---|
+| `GET /b3dash/usu/list/backoffice` | `JwtGuard + UserInstanceGuard + AdminGuard` | `idemp` (obrigatório) | Lista usuários do legado (`usu.id`, `usu.login`) da empresa solicitada que ainda não estão vinculados a um usuário da API e que estão ativos |
 
 **Query SQL:**
 ```sql
-SELECT id, login
-FROM usu
-WHERE userId IS NULL
-  AND NOT inativo
-ORDER BY login
+SELECT u.id, u.login
+FROM usu u
+INNER JOIN usuemp ue ON ue.idusu = u.id
+WHERE u.userId IS NULL
+  AND NOT u.inativo
+  AND ue.idcnt = ?      -- idemp validado em validateIdemp()
+ORDER BY u.login
 ```
 
+- `validateIdemp` é executado antes da query: garante que o `idemp` recebido pertence ao usuário autenticado (mesma lógica dos demais sub-módulos).
+- `usuemp` é a tabela de junção `usu × cnt` que define quais empresas (emitentes) cada usuário do legado enxerga. Filtrar por `ue.idcnt = idemp` garante que apenas usuários da empresa solicitada são retornados.
 - `userId IS NULL` filtra contas do legado que ainda não foram associadas a um usuário da API (campo de vínculo).
 - `NOT inativo` exclui contas marcadas como inativas (`inativo` = TINYINT/BIT).
-- Resposta é um array simples `[{ id, login }, ...]` (sem `GridResponseDto`) — pensado para popular um `<select>` no front durante o vínculo de um novo usuário da API a uma conta do legado.
+- Resposta é um array simples `[{ id, login }, ...]` (sem `GridResponseDto`) — pensado para popular um `<select>` no front durante o vínculo de um novo usuário da API a uma conta do legado da empresa em foco.
 
 ## Padrão de Consumo
 

@@ -703,11 +703,25 @@ Listagem de usuários do sistema legado do tenant (tabela `usu`) — usada pelo 
 
 ### `GET /b3dash/usu/list/backoffice`
 
-Lista os usuários do back-office do tenant que ainda **não** estão vinculados a um usuário da API e que estão **ativos**.
+Lista os usuários do back-office do tenant **da empresa solicitada** (`idemp`) que ainda **não** estão vinculados a um usuário da API e que estão **ativos**.
 
-**Query:** nenhuma.
+**Query:**
 
-**Filtro SQL aplicado:** `userId IS NULL AND NOT inativo` na tabela `usu`. Ordenado por `login`.
+| Param | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `idemp` | integer | ✅ | ID da empresa (emitente) no banco do tenant. Deve pertencer ao usuário autenticado (validado via `usuemp` em `EmpService.listEmitentes`) — caso contrário, retorna `403 Forbidden`. |
+
+**Filtro SQL aplicado:**
+
+```sql
+SELECT u.id, u.login
+FROM usu u
+INNER JOIN usuemp ue ON ue.idusu = u.id
+WHERE u.userId IS NULL
+  AND NOT u.inativo
+  AND ue.idcnt = ?      -- idemp
+ORDER BY u.login
+```
 
 **Resposta `200`:**
 
@@ -718,7 +732,9 @@ Lista os usuários do back-office do tenant que ainda **não** estão vinculados
 ]
 ```
 
-> A resposta é um array simples (não usa `GridResponseDto`) — sem paginação, sem `total`. Útil para popular um `<select>` no front durante o vínculo de um novo usuário da API a uma conta do legado.
+**Resposta `403`:** `idemp` não pertence ao usuário autenticado.
+
+> A resposta é um array simples (não usa `GridResponseDto`) — sem paginação, sem `total`. Útil para popular um `<select>` no front durante o vínculo de um novo usuário da API a uma conta do legado da empresa em foco.
 
 ---
 
@@ -768,8 +784,8 @@ Lista os usuários do back-office do tenant que ainda **não** estão vinculados
 
 ### Usu
 
-| Endpoint | Tipo | Guard | Usa `periodo`? |
+| Endpoint | Tipo | Guard | Query obrigatória |
 |---|---|---|---|
-| `GET /b3dash/usu/list/backoffice` | Lista simples | `AdminGuard` | ❌ |
+| `GET /b3dash/usu/list/backoffice` | Lista simples | `AdminGuard` | `idemp` |
 
 > **"snapshot"** = endpoint retorna posição atual, independente do período informado. O parâmetro `periodo` ainda deve ser enviado (validação) mas não afeta o resultado.
