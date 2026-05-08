@@ -6,8 +6,8 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt/jwt.strategy';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RefreshTokenEntity } from './refresh-token/refresh-token.entity';
-import { RefreshTokenService } from './refresh-token/refresh-token.service';
+import { RefreshTokenModule } from './refresh-token/refresh-token.module';
+import { TasksModule } from './tasks/tasks.module';
 import { LoginAttemptService } from './login-attempt/login-attempt.service';
 import { LoginAttemptEntity } from './login-attempt/login-attempt.entity';
 import { BlacklistModule } from './black-list/black-list.module';
@@ -29,7 +29,6 @@ import { TenantModule } from 'src/tenant/tenant.module';
     ConfigModule,
     TypeOrmModule.forFeature([
       UserEntity,
-      RefreshTokenEntity,
       UserInstanceEntity,
       ResetPasswordEntity,
       LoginAttemptEntity,
@@ -50,13 +49,14 @@ import { TenantModule } from 'src/tenant/tenant.module';
     UserModule,
     UserInstanceModule,
     BlacklistModule,
+    RefreshTokenModule,
+    TasksModule,
     AwsSenderModule,
     TenantModule,
   ],
   providers: [
     AuthService,
     JwtStrategy,
-    RefreshTokenService,
     LoginAttemptService,
     PasswordService,
     UserService,

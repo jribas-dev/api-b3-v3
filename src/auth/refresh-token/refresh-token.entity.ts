@@ -21,6 +21,9 @@ export class RefreshTokenEntity {
   @Column({ default: false })
   isRevoked: boolean;
 
+  @Column({ type: 'varchar', length: 255, nullable: true, default: null })
+  deviceName: string | null;
+
   @Column()
   expiresAt: Date;
 

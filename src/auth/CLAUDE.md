@@ -176,10 +176,21 @@ resetAttempts(identifier): Promise<void>             // chamado em login bem-suc
 | `token`      | string  | 64 bytes aleatórios em hex (128 chars)  |
 | `userInstance` | FK    | Cascata ON DELETE                       |
 | `isRevoked`  | boolean | `false` padrão; `true` após uso/logout  |
+| `deviceName` | string \| null | Nome do dispositivo (máx. 255 chars); populado no `/auth/instance` (body ou fallback User-Agent) e preservado na rotação do `/auth/refresh` |
 | `expiresAt`  | Date    | 7 dias + 1 hora a partir da emissão     |
 | `createdAt`  | Date    | Automático                              |
 
-**Rotação:** a cada `/auth/refresh`, o token antigo é revogado (`isRevoked = true`) e um novo par é emitido.
+**Rotação:** a cada `/auth/refresh`, o token antigo é revogado (`isRevoked = true`) e um novo par é emitido. O `deviceName` é preservado automaticamente do token anterior.
+
+### Gerenciamento de Sessões
+
+| Endpoint | Auth | Descrição |
+|---|---|---|
+| `GET /auth/sessions` | `JwtGuard` (etapa 1 ou 2) | Lista sessões ativas: retorna `{ sessions: [{ deviceName, expiresAt }] }` |
+| `DELETE /auth/sessions` | `JwtGuard` (etapa 1 ou 2) | Revoga todos os refresh tokens ativos do usuário: retorna `{ message, count }` |
+
+- Ambos os endpoints usam apenas `JwtGuard` — não exigem `UserInstanceGuard` pois filtram pelo `userId` do payload (`sub` → `userId`).
+- `revokeAllByUserId` busca os IDs primeiro (`find`) e atualiza por `In([...ids])` para garantir compatibilidade com o TypeORM.
 
 ---
 
@@ -232,7 +243,7 @@ POST /auth/reset-password/update  { token, email, password }
 |-----------------------|---------------------------------------------------------------|
 | `AuthService`         | Orquestra validate, login, loginInstance, refresh, logout     |
 | `PasswordService`     | `hashPassword` / `comparePasswords` via bcrypt (salt 12)      |
-| `RefreshTokenService` | `generate` / `validate` / `revoke`                           |
+| `RefreshTokenService` | `generate` / `validate` / `revoke` / `findActiveByUserId` / `revokeAllByUserId` |
 | `BlacklistService`    | `addToken` / `isBlacklisted` / `cleanupExpired`              |
 | `LoginAttemptService` | `getIdentifier` / `shouldBlock` / `registerFailure` / `resetAttempts` |
 | `ResetPasswordService`| `requestPasswordReset` / `checkToken` / `updatePassword`     |

@@ -1,8 +1,11 @@
 import {
   Controller,
   Post,
+  Get,
+  Delete,
   Body,
   Req,
+  Headers,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -10,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginAttemptService } from './login-attempt/login-attempt.service';
+import { RefreshTokenService } from './refresh-token/refresh-token.service';
 import { Request } from 'express';
 import { JwtGuard } from './guards/jwt.guard';
 import { UserInstanceGuard } from './guards/user-instance.guard';
@@ -22,6 +26,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly loginAttemptService: LoginAttemptService,
+    private readonly refreshTokenService: RefreshTokenService,
   ) {}
 
   @Post('login')
@@ -50,13 +55,35 @@ export class AuthController {
   async selectInstance(
     @Req() req: Request & { user: { isRoot: boolean; userId: string } },
     @Body() inputDto: SelectInstanceDto,
+    @Headers('user-agent') userAgent?: string,
   ) {
     const validUser = await this.authService.validateUserInstance(
       req.user.userId,
       inputDto.dbId,
     );
-    const tokenResponse = await this.authService.loginInstance(validUser);
+    const deviceName = inputDto.deviceName ?? userAgent ?? null;
+    const tokenResponse = await this.authService.loginInstance(validUser, deviceName);
     return tokenResponse;
+  }
+
+  @Get('sessions')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtGuard)
+  async listSessions(
+    @Req() req: Request & { user: { userId: string } },
+  ) {
+    const sessions = await this.refreshTokenService.findActiveByUserId(req.user.userId);
+    return { sessions };
+  }
+
+  @Delete('sessions')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtGuard)
+  async revokeAllSessions(
+    @Req() req: Request & { user: { userId: string } },
+  ) {
+    const count = await this.refreshTokenService.revokeAllByUserId(req.user.userId);
+    return { message: 'Sessões revogadas com sucesso', count };
   }
 
   @Post('refresh')

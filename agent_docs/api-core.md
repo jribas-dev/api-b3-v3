@@ -14,6 +14,7 @@
 ## Índice
 
 - [Autenticação](#autenticação)
+- [Gerenciamento de Sessões](#gerenciamento-de-sessões)
 - [Reset de Senha](#reset-de-senha)
 - [Sessão e Enums](#sessão-e-enums)
 - [Usuários](#usuários)
@@ -97,6 +98,7 @@ Seleciona um tenant e retorna o token de etapa 2 com roles. Máximo 10 chamadas 
 | Campo | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `dbId` | string | ✅ | ID da instância/tenant (obtido em `GET /user-instances/user/:userId`) |
+| `deviceName` | string | ❌ | Nome do dispositivo (máx. 255 chars). Se omitido, o `User-Agent` do header é usado como fallback |
 
 **Resposta `200`:**
 
@@ -132,7 +134,7 @@ Seleciona um tenant e retorna o token de etapa 2 com roles. Máximo 10 chamadas 
 
 ### `POST /auth/refresh`
 
-Renova o par de tokens. O `refreshToken` anterior é invalidado (uso único — rotação automática).
+Renova o par de tokens. O `refreshToken` anterior é invalidado (uso único — rotação automática). O `deviceName` é preservado automaticamente do token anterior.
 
 **Auth:** nenhuma
 
@@ -174,6 +176,50 @@ Invalida o token atual (insere na blacklist).
 
 ```jsonc
 { "message": "Logout realizado com sucesso" }
+```
+
+---
+
+## Gerenciamento de Sessões
+
+### `GET /auth/sessions`
+
+Lista as sessões ativas (refresh tokens não revogados e não expirados) do usuário autenticado.
+
+**Auth:** `JwtGuard` (token etapa 1 ou 2)
+
+**Body:** nenhum
+
+**Resposta `200`:**
+
+```jsonc
+{
+  "sessions": [
+    {
+      "deviceName": "Chrome on Windows",  // string | null
+      "expiresAt": "2026-05-15T14:30:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### `DELETE /auth/sessions`
+
+Revoga todos os refresh tokens ativos do usuário autenticado.
+
+**Auth:** `JwtGuard` (token etapa 1 ou 2)
+
+**Body:** nenhum
+
+**Resposta `200`:**
+
+```jsonc
+{
+  "message": "Sessões revogadas com sucesso",
+  "count": 3   // número de tokens revogados
+}
 ```
 
 ---
