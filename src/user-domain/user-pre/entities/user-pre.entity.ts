@@ -21,6 +21,9 @@ export class UserPreEntity {
   @Column()
   expiresAt: Date;
 
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  userInviteId: string;
+
   @CreateDateColumn({ select: false })
   createdAt: Date;
 

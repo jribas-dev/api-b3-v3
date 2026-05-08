@@ -32,7 +32,21 @@ export class UserPreService {
     private readonly configService: ConfigService,
   ) {}
 
-  async create(data: CreateUserPreDto): Promise<UserPreEntity> {
+  private async sendInviteEmail(email: string, token: string): Promise<void> {
+    const frontUrl = this.configService.get<string>('FRONTEND_URL');
+    const newUserLink = `${frontUrl}/user-pre/confirm/?token=${token}&email=${email}`;
+    await this.senderService.sendTemplateEmail(
+      email,
+      'Efetivação de conta',
+      TemplateType.NEWUSER_CALL,
+      { name: email, newUserLink },
+    );
+  }
+
+  async create(
+    data: CreateUserPreDto,
+    userInviteId: string,
+  ): Promise<UserPreEntity> {
     const existingUser = await this.userService.findOneByEmail(data.email);
     if (existingUser) {
       throw new UnauthorizedException('User already exists');
@@ -47,11 +61,11 @@ export class UserPreService {
         await this.userPreRepo.delete(existingUserPre.userPreId);
       }
     }
-    // Create a new user pre with a token and expiration date
     const userPre = this.userPreRepo.create({
       email: data.email,
       token: randomBytes(88).toString('hex'),
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 12), // 12 hours
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 12),
+      userInviteId,
     });
     const newUserPre = await this.userPreRepo.save(userPre);
     for (const { dbId, idBackendUser, roleBack, roleFront } of data.dblist) {
@@ -63,18 +77,34 @@ export class UserPreService {
       userPreInstance.rolefront = roleFront;
       await this.userPreInstanceRepo.save(userPreInstance);
     }
-    // Send email with the token
-    const frontUrl = this.configService.get<string>('FRONTEND_URL');
-    const newUserLink = `${frontUrl}/user-pre/confirm/?token=${userPre.token}&email=${data.email}`;
-
-    await this.senderService.sendTemplateEmail(
-      data.email,
-      'Efetivação de conta',
-      TemplateType.NEWUSER_CALL,
-      { name: data.email, newUserLink },
-    );
-
+    await this.sendInviteEmail(data.email, userPre.token);
     return newUserPre;
+  }
+
+  async findMyInvites(userId: string): Promise<UserPreEntity[]> {
+    return this.userPreRepo.find({
+      where: { userInviteId: userId },
+      select: ['userPreId', 'email', 'token', 'expiresAt', 'userInviteId'],
+    });
+  }
+
+  async resendInvite(email: string): Promise<void> {
+    const userPre = await this.userPreRepo.findOne({ where: { email } });
+    if (!userPre) {
+      throw new NotFoundException('Convite não encontrado');
+    }
+    await this.sendInviteEmail(userPre.email, userPre.token);
+  }
+
+  async regenerateToken(email: string): Promise<void> {
+    const userPre = await this.userPreRepo.findOne({ where: { email } });
+    if (!userPre) {
+      throw new NotFoundException('Convite não encontrado');
+    }
+    userPre.token = randomBytes(88).toString('hex');
+    userPre.expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 12);
+    await this.userPreRepo.save(userPre);
+    await this.sendInviteEmail(userPre.email, userPre.token);
   }
 
   async checkUserPre(data: CheckUserPreDto): Promise<UserPreEntity> {
