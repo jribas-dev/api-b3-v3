@@ -18,6 +18,7 @@ import { UserEntity } from 'src/user-domain/user/entities/user.entity';
 import { UserInstanceService } from 'src/user-domain/user-instance/user-instance.service';
 import { UserInstanceEntity } from 'src/user-domain/user-instance/entities/user-instance.entity';
 import { BlacklistService } from './black-list/black-list.service';
+import { UsuService } from 'src/tenant/usu.service';
 
 @Injectable()
 export class AuthService {
@@ -33,6 +34,7 @@ export class AuthService {
     private readonly blacklistService: BlacklistService,
     private readonly cfgService: CfgService,
     private readonly configService: ConfigService,
+    private readonly usuService: UsuService,
   ) {}
 
   async validate(
@@ -139,6 +141,24 @@ export class AuthService {
       userInstance,
       deviceName,
     );
+
+    if (userInstance.idBackendUser) {
+      try {
+        await this.usuService.update(
+          userInstance.dbId,
+          userInstance.userId,
+          userInstance.idBackendUser,
+          {
+            userId: userInstance.userId,
+            email: userInstance.user.email,
+            nome: userInstance.user.name,
+            telefone: userInstance.user.phone ?? undefined,
+          },
+        );
+      } catch {
+        // sync best-effort: erros do legado não devem impedir o login
+      }
+    }
 
     return {
       isActive: userInstance.isActive && userInstance.user.isActive,

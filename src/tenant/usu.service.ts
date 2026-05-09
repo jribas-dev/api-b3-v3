@@ -64,8 +64,8 @@ export class UsuService {
     const ds = await this.tenantService.getDataSource(dbId);
 
     const target = await ds.query<Array<{ ok: number }>>(
-      `SELECT 1 AS ok FROM usu WHERE id = ? AND userId = ? LIMIT 1`,
-      [id, authUserId],
+      `SELECT 1 AS ok FROM usu WHERE id = ?`,
+      [id],
     );
     if (target.length === 0) {
       throw new NotFoundException('Usuário do legado não encontrado');
@@ -74,6 +74,10 @@ export class UsuService {
     const fields: string[] = [];
     const values: (string | null)[] = [];
 
+    if (body.userId !== undefined) {
+      fields.push('userId = ?');
+      values.push(body.userId);
+    }
     if (body.nome !== undefined) {
       fields.push('nome = ?');
       values.push(body.nome);
