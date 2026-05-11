@@ -388,6 +388,24 @@ Lista todos os usuários do sistema.
 
 ---
 
+### `GET /users/notin`
+
+Lista todos os usuários **convidados pelo admin autenticado** (`user.userInviteId = req.user.userId`) que **ainda não possuem vínculo (`user_instances`) com a instância atual** (`req.user.dbId`). Útil para o front oferecer um seletor "vincular usuário já convidado a esta instância" sem repetir o fluxo de convite.
+
+**Auth:** `JwtGuard` + `AdminGuard` (e token de etapa 2 — exige `dbId` no payload)
+
+**Body:** nenhum
+
+**Resposta `200`:** array de `ResponseUserDto` (mesmo shape de `POST /users`).
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `403` | Token sem permissão de admin, ou token de etapa 1 (sem `dbId`) |
+
+---
+
 ### `GET /users/get/me`
 
 Retorna os dados do usuário autenticado.
@@ -443,6 +461,8 @@ Ativa ou inativa um usuário. Ao inativar, propaga `isActive: false` para todos 
 
 **Auth:** `JwtGuard` + `AdminGuard`
 
+> **Bloqueio supervisor → admin:** se o solicitante **não é `isRoot`**, tem `roleBack = supervisor` e possui `dbId` no token (etapa 2), a chamada é rejeitada com `403` quando o `user_instances` do alvo no mesmo `dbId` tem `roleback = admin`. Supervisores podem alterar usuários com qualquer outra role no tenant em que atuam, mas não podem mexer em administradores.
+
 **Body (JSON):**
 
 | Campo | Tipo | Obrigatório | Descrição |
@@ -457,7 +477,7 @@ Ativa ou inativa um usuário. Ao inativar, propaga `isActive: false` para todos 
 | Status | Motivo |
 |---|---|
 | `404` | Usuário não encontrado |
-| `403` | Token sem permissão de admin |
+| `403` | Token sem permissão de admin, ou supervisor tentando alterar um administrador no tenant atual |
 
 ---
 
@@ -613,13 +633,73 @@ Lista todos os tenants vinculados a um usuário, ordenados pelo nome da instânc
 
 ### `GET /user-instances/db/:dbId`
 
-Lista todos os usuários vinculados a um tenant.
+Lista todos os usuários vinculados a um tenant. Por padrão retorna apenas os campos do vínculo (`ResponseUserInstanceDto`). O parâmetro `include` enriquece a resposta com dados do `user` **ou** da `instance` (mutuamente exclusivos).
 
 **Auth:** `JwtGuard` + `AdminGuard`
 
 **Path params:** `dbId` (CUID2 da instância)
 
-**Resposta `200`:** array de `ResponseUserInstanceDto`.
+**Query params:**
+
+| Param | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `include` | `user` \| `database` | ❌ | Quando `user`: adiciona um objeto `user` ao vínculo com `{ email, phone, name, isRoot, isActive }`. Quando `database`: adiciona um objeto `database` com `{ name, maxCompanies, maxUsers, isActive }` da instância. Qualquer outro valor retorna `400 Bad Request` |
+
+**Resposta `200`:** array de objetos. Cada item é um `ResponseUserInstanceDto` e — quando `include` é informado — recebe a propriedade adicional correspondente:
+
+```jsonc
+// include=user
+[
+  {
+    "id": 42,
+    "userId": "cuid2string",
+    "dbId": "cuid2string",
+    "idBackendUser": null,
+    "roleback": "user",
+    "rolefront": ["saler"],
+    "isActive": true,
+    "instanceName": "Empresa X",
+    "instanceDbName": "empresa_x",
+    "instanceDbHost": "mysql.server.com",
+    "user": {
+      "email": "joao@example.com",
+      "phone": "+5511999999999",
+      "name": "João Silva",
+      "isRoot": false,
+      "isActive": true
+    }
+  }
+]
+
+// include=database
+[
+  {
+    "id": 42,
+    "userId": "cuid2string",
+    "dbId": "cuid2string",
+    "idBackendUser": null,
+    "roleback": "user",
+    "rolefront": ["saler"],
+    "isActive": true,
+    "instanceName": "Empresa X",
+    "instanceDbName": "empresa_x",
+    "instanceDbHost": "mysql.server.com",
+    "database": {
+      "name": "Empresa X",
+      "maxCompanies": 5,
+      "maxUsers": 20,
+      "isActive": true
+    }
+  }
+]
+```
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `400` | `include` informado com valor diferente de `user` ou `database` |
+| `404` | Nenhum vínculo encontrado para o `dbId` |
 
 ---
 
@@ -648,6 +728,8 @@ Atualiza roles ou status de ativação de um vínculo.
 
 **Auth:** `JwtGuard` + `AdminGuard`
 
+> **Bloqueio supervisor → admin:** se o solicitante **não é `isRoot`** e tem `roleBack = supervisor`, a chamada é rejeitada com `403` quando o vínculo alvo (`existing.roleback`) é `admin`. Supervisores podem atualizar qualquer vínculo de role `user`/`supervisor`/`notallow`, mas não podem mexer em administradores.
+
 **Path params:** `id` (integer)
 
 **Body (JSON) — todos opcionais:**
@@ -660,6 +742,13 @@ Atualiza roles ou status de ativação de um vínculo.
 
 **Resposta `200`:** vínculo atualizado (`ResponseUserInstanceDto`).
 
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `403` | Supervisor tentando alterar um vínculo cujo `roleback` é `admin` |
+| `404` | Vínculo não encontrado |
+
 ---
 
 ### `DELETE /user-instances/:id`
@@ -668,6 +757,8 @@ Remove um vínculo usuário-instância.
 
 **Auth:** `JwtGuard` + `AdminGuard`
 
+> **Bloqueio supervisor → admin:** mesma regra do `PATCH` — supervisores não podem remover vínculos com `roleback = admin` (`403 Forbidden`).
+
 **Path params:** `id` (integer)
 
 **Resposta `200`:**
@@ -675,6 +766,13 @@ Remove um vínculo usuário-instância.
 ```jsonc
 { "message": "Usuário X Instância deletada com sucesso" }
 ```
+
+**Erros comuns:**
+
+| Status | Motivo |
+|---|---|
+| `403` | Supervisor tentando remover um vínculo cujo `roleback` é `admin` |
+| `404` | Vínculo não encontrado |
 
 ---
 

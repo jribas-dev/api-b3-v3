@@ -57,17 +57,47 @@ export class UserInstanceService {
     );
   }
 
-  async findByDb(dbId: string): Promise<ResponseUserInstanceDto[]> {
+  async findByDb(
+    dbId: string,
+    include?: 'user' | 'database',
+  ): Promise<Record<string, unknown>[]> {
+    const relations =
+      include === 'database' ? ['user', 'instance'] : ['user'];
     const usersInstance = await this.userInstanceRepo.find({
       where: { dbId },
-      relations: ['user'],
+      relations,
     });
     if (!usersInstance || usersInstance.length === 0) {
       throw new NotFoundException('No user instances found');
     }
-    return usersInstance.map((userInstance) =>
-      plainToInstance(ResponseUserInstanceDto, userInstance),
-    );
+    return usersInstance.map((ui) => {
+      const base = plainToInstance(ResponseUserInstanceDto, ui);
+      const result: Record<string, unknown> = { ...base };
+      if (include === 'user' && ui.user) {
+        result.user = {
+          email: ui.user.email,
+          phone: ui.user.phone,
+          name: ui.user.name,
+          isRoot: ui.user.isRoot,
+          isActive: ui.user.isActive,
+        };
+      } else if (include === 'database' && ui.instance) {
+        result.database = {
+          name: ui.instance.name,
+          maxCompanies: ui.instance.maxCompanies,
+          maxUsers: ui.instance.maxUsers,
+          isActive: ui.instance.isActive,
+        };
+      }
+      return result;
+    });
+  }
+
+  async findOneByUserAndDb(
+    userId: string,
+    dbId: string,
+  ): Promise<UserInstanceEntity | null> {
+    return this.userInstanceRepo.findOne({ where: { userId, dbId } });
   }
 
   async update(

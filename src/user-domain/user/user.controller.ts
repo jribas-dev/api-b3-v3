@@ -19,11 +19,16 @@ import { SetActiveUserDto } from './dto/set-active-user.dto';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RootGuard } from 'src/auth/guards/root.guard';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { UserInstanceService } from 'src/user-domain/user-instance/user-instance.service';
+import { RoleBack } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 
 @UseGuards(JwtGuard)
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly userInstanceService: UserInstanceService,
+  ) {}
 
   @Post()
   @UseGuards(AdminGuard)
@@ -56,6 +61,20 @@ export class UserController {
     return await this.userService.findAll();
   }
 
+  @Get('notin')
+  @UseGuards(AdminGuard)
+  async findInvitedNotInInstance(
+    @Request() req: { user: { userId: string; dbId?: string } },
+  ) {
+    if (!req.user.dbId) {
+      throw new ForbiddenException('Instância não selecionada');
+    }
+    return await this.userService.findInvitedNotInInstance(
+      req.user.userId,
+      req.user.dbId,
+    );
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return await this.userService.findOneById(id);
@@ -68,7 +87,26 @@ export class UserController {
 
   @Patch('active')
   @UseGuards(AdminGuard)
-  async setActive(@Body() dto: SetActiveUserDto) {
+  async setActive(
+    @Body() dto: SetActiveUserDto,
+    @Request()
+    req: { user: { isRoot: boolean; roleBack?: RoleBack; dbId?: string } },
+  ) {
+    if (
+      !req.user.isRoot &&
+      req.user.roleBack === RoleBack.SUPER &&
+      req.user.dbId
+    ) {
+      const target = await this.userInstanceService.findOneByUserAndDb(
+        dto.userId,
+        req.user.dbId,
+      );
+      if (target?.roleback === RoleBack.ADMIN) {
+        throw new ForbiddenException(
+          'Supervisores não podem alterar dados de administradores',
+        );
+      }
+    }
     return await this.userService.setActive(dto.userId, dto.isActive);
   }
 

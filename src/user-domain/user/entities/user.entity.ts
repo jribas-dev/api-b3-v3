@@ -38,6 +38,9 @@ export class UserEntity {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  userInviteId: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

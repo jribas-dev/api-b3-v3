@@ -19,7 +19,8 @@ Convidado clica no link → frontend valida (GET /user-pre/check?email=&token=)
 
 Convidado preenche telefone e senha (POST /user-pre/confirm)
   └─ Valida token novamente
-  └─ Cria UserEntity (user.service.create)
+  └─ Cria UserEntity (user.service.create(data, userPre.userInviteId))
+       └─ Propaga userInviteId do convite para o user definitivo
   └─ Cria UserInstanceEntity para cada tenant pré-configurado
   └─ Deleta o registro user_pre (e user_pre_instances por CASCADE)
   └─ Dispara email de boas-vindas (TemplateType.WELCOME)
@@ -89,6 +90,7 @@ Retornam **204 No Content**. Lançam **404** se o email não tiver convite pende
 - `userInviteId` é preenchido no insert e nunca alterado.
 - O `confirm` valida que o `email` do body corresponde ao `email` do token.
 - Ao confirmar, os `user_pre_instances` são copiados exatamente para `user_instances` com `isActive: true`.
+- **Propagação do `userInviteId`:** ao chamar `userService.create(data, userPre.userInviteId)`, o admin que originou o convite passa a constar no `user.userInviteId`. Isso é o que viabiliza o `GET /users/notin` no módulo `user`, que filtra "usuários que **eu** convidei e que ainda não estão na instância atual".
 
 ## Dependências Internas
 

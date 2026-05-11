@@ -22,10 +22,14 @@ export class UserService {
     private readonly senderService: AwsSenderService,
   ) {}
 
-  async create(userData: CreateUserDto): Promise<ResponseUserDto> {
+  async create(
+    userData: CreateUserDto,
+    userInviteId?: string | null,
+  ): Promise<ResponseUserDto> {
     const user = this.userRepo.create({
       ...userData,
       password: await this.passwordService.hashPassword(userData.password),
+      userInviteId: userInviteId ?? null,
     });
     const savedUser = await this.userRepo.save(user);
 
@@ -45,6 +49,28 @@ export class UserService {
     if (!users || users.length === 0) {
       throw new NotFoundException('Nenhum usuário encontrado');
     }
+    return users.map((user) => plainToInstance(ResponseUserDto, user));
+  }
+
+  async findInvitedNotInInstance(
+    inviterUserId: string,
+    dbId: string,
+  ): Promise<ResponseUserDto[]> {
+    const users = await this.userRepo
+      .createQueryBuilder('user')
+      .where('user.userInviteId = :inviterUserId', { inviterUserId })
+      .andWhere((qb) => {
+        const sub = qb
+          .subQuery()
+          .select('1')
+          .from(UserInstanceEntity, 'ui')
+          .where('ui.userId = user.userId')
+          .andWhere('ui.dbId = :dbId')
+          .getQuery();
+        return `NOT EXISTS ${sub}`;
+      })
+      .setParameter('dbId', dbId)
+      .getMany();
     return users.map((user) => plainToInstance(ResponseUserDto, user));
   }
 

@@ -12,6 +12,7 @@ export class CreateUserDto extends OmitType(UserEntity, [
   'userId',
   'isRoot',
   'isActive',
+  'userInviteId',
   'createdAt',
   'updatedAt',
   'instances',

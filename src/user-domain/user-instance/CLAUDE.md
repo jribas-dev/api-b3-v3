@@ -49,12 +49,12 @@ Relações carregadas com `eager: true`: `user` e `instance`.
 
 | Método | Rota | Auth | Descrição |
 |---|---|---|---|
-| `POST` | `/user-instances` | JwtGuard + RootGuard | Cria vínculo manualmente |
+| `POST` | `/user-instances` | JwtGuard + AdminGuard | Cria vínculo manualmente |
 | `GET` | `/user-instances/user/:userId` | JwtGuard | Lista tenants do usuário (próprio ou Root) |
-| `GET` | `/user-instances/db/:dbId` | JwtGuard + RootGuard | Lista usuários de um tenant |
+| `GET` | `/user-instances/db/:dbId` | JwtGuard + AdminGuard | Lista usuários de um tenant. Aceita `?include=user\|database` para enriquecer cada item |
 | `GET` | `/user-instances/:id` | JwtGuard | Busca por id (somente próprio vínculo) |
-| `PATCH` | `/user-instances/:id` | JwtGuard + RootGuard | Atualiza roles ou isActive |
-| `DELETE` | `/user-instances/:id` | JwtGuard + RootGuard | Remove vínculo |
+| `PATCH` | `/user-instances/:id` | JwtGuard + AdminGuard | Atualiza roles ou isActive. **Bloqueio supervisor → admin** (ver Regras) |
+| `DELETE` | `/user-instances/:id` | JwtGuard + AdminGuard | Remove vínculo. **Bloqueio supervisor → admin** (ver Regras) |
 
 ## Regras de Negócio
 
@@ -63,6 +63,26 @@ Relações carregadas com `eager: true`: `user` e `instance`.
 - Ao inativar um `UserEntity` (`isActive = false`), o `UserService` propaga automaticamente `isActive = false` para todos os vínculos desse usuário.
 - O campo `idBackendUser` é opcional — usado para mapear o usuário da API ao registro correspondente no banco legado do tenant.
 - O `addUserInstance` (chamado pelo fluxo de confirm do `user-pre`) sempre força `isActive: true`.
+- **Bloqueio supervisor → admin (PATCH e DELETE):** se o solicitante **não é `isRoot`** e tem `roleBack = supervisor`, ambos os endpoints fazem um `findOne(id)` prévio e lançam `403 Forbidden` quando o vínculo alvo tem `roleback = admin`. Supervisores podem editar/remover vínculos com qualquer outra role (`user`/`supervisor`/`notallow`), mas não podem tocar em administradores.
+- **Query `include` em `GET /db/:dbId`:**
+  - `include=user` carrega a relação `user` (sem o `password`, que é `select:false`) e adiciona `{ email, phone, name, isRoot, isActive }` em cada item.
+  - `include=database` carrega a relação `instance` e adiciona `{ name, maxCompanies, maxUsers, isActive }`.
+  - Sem `include`, apenas a relação `user` é carregada (necessária para o `ResponseUserInstanceDto`), mas o objeto enriquecido **não** é anexado.
+  - Qualquer valor diferente de `user`/`database`/ausente lança `400 Bad Request` no controller.
+
+## Métodos do Service
+
+| Método | Descrição |
+|---|---|
+| `create(data)` | Cria vínculo (uso administrativo). |
+| `addUserInstance(data)` | Variante chamada pelo `user-pre.confirm`; força `isActive: true`. |
+| `findByUser(userId)` | Lista vínculos do usuário ordenados pelo `instance.name`. |
+| `findByDb(dbId, include?)` | Lista vínculos do tenant. Quando `include` é `user`/`database`, anexa o objeto correspondente — ver "Query `include`" acima. |
+| `findOne(id)` | Busca o vínculo pelo PK. |
+| `findOneByUserAndDb(userId, dbId)` | Busca um vínculo específico pelo par `(userId, dbId)`. Usado pelo `UserController` para validar o bloqueio supervisor → admin em `PATCH /users/active`. |
+| `findValid(userId, dbId)` | Usado pelo `auth.module` em `POST /auth/instance` — confirma vínculo ativo e devolve roles para o JWT. |
+| `update(id, updates)` | Atualiza roles/`isActive`. |
+| `delete(id)` | Remove o vínculo. |
 
 ## Uso no Fluxo de Autenticação
 

@@ -132,7 +132,7 @@ export class UserPreService {
     const userPreInstances = await this.userPreInstanceRepo.find({
       where: { userPreId: userPre.userPreId },
     });
-    const user = await this.userService.create(data);
+    const user = await this.userService.create(data, userPre.userInviteId);
     for (const userPreInstance of userPreInstances) {
       await this.userInstanceService.addUserInstance({
         userId: user.userId,
