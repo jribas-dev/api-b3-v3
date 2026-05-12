@@ -11,7 +11,8 @@
       "Bash(npm view *)",
       "WebSearch",
       "mcp__mysql__execute_sql",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(git add *)"
     ]
   }
 }
