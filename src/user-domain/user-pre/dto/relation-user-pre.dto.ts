@@ -4,8 +4,8 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
-  IsOptional,
   IsString,
+  ValidateIf,
 } from 'class-validator';
 import {
   RoleBack,
@@ -18,8 +18,11 @@ export class RelationUserPreDto {
   @IsString()
   dbId: string;
 
+  @ValidateIf((o: RelationUserPreDto) => o.roleBack !== RoleBack.NOTALLOW)
+  @IsNotEmpty({
+    message: 'idBackendUser é obrigatório quando roleBack é diferente de notallow',
+  })
   @IsNumber()
-  @IsOptional()
   idBackendUser: number | null;
 
   @IsEnum(RoleBack)

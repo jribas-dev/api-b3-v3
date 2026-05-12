@@ -69,6 +69,7 @@ Relações carregadas com `eager: true`: `user` e `instance`.
   - `include=database` carrega a relação `instance` e adiciona `{ name, maxCompanies, maxUsers, isActive }`.
   - Sem `include`, apenas a relação `user` é carregada (necessária para o `ResponseUserInstanceDto`), mas o objeto enriquecido **não** é anexado.
   - Qualquer valor diferente de `user`/`database`/ausente lança `400 Bad Request` no controller.
+- **Filtro BuiltIn em `GET /db/:dbId`:** se o solicitante **não é `isRoot`**, os vínculos cujos `user.email` sejam `super@b3erp.com.br` ou `admin@b3erp.com.br` (contas BuiltIn do sistema) são removidos da lista antes de retornar. Solicitantes `isRoot` recebem a lista completa.
 
 ## Métodos do Service
 
@@ -77,7 +78,7 @@ Relações carregadas com `eager: true`: `user` e `instance`.
 | `create(data)` | Cria vínculo (uso administrativo). |
 | `addUserInstance(data)` | Variante chamada pelo `user-pre.confirm`; força `isActive: true`. |
 | `findByUser(userId)` | Lista vínculos do usuário ordenados pelo `instance.name`. |
-| `findByDb(dbId, include?)` | Lista vínculos do tenant. Quando `include` é `user`/`database`, anexa o objeto correspondente — ver "Query `include`" acima. |
+| `findByDb(dbId, isRoot, include?)` | Lista vínculos do tenant. Quando `include` é `user`/`database`, anexa o objeto correspondente — ver "Query `include`" acima. Quando `isRoot` é `false`, remove os usuários BuiltIn (`super@b3erp.com.br`, `admin@b3erp.com.br`) — ver "Filtro BuiltIn" acima. |
 | `findOne(id)` | Busca o vínculo pelo PK. |
 | `findOneByUserAndDb(userId, dbId)` | Busca um vínculo específico pelo par `(userId, dbId)`. Usado pelo `UserController` para validar o bloqueio supervisor → admin em `PATCH /users/active`. |
 | `findValid(userId, dbId)` | Usado pelo `auth.module` em `POST /auth/instance` — confirma vínculo ativo e devolve roles para o JWT. |

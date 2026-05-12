@@ -8,7 +8,36 @@ import { ResponseInstanceDto } from './dto/response-instance.dto';
 import { plainToInstance } from 'class-transformer';
 import { UpdateInstanceDto } from './dto/update-instance.dto';
 import { UserInstanceEntity } from 'src/user-domain/user-instance/entities/user-instance.entity';
+import {
+  RoleBack,
+  RoleFrontEnum,
+} from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
+import { UserEntity } from 'src/user-domain/user/entities/user.entity';
 import { TenantService } from 'src/tenant/tenant.service';
+
+const BUILTIN_USER_INSTANCES = [
+  {
+    email: 'admin@b3erp.com.br',
+    roleback: RoleBack.ADMIN,
+    rolefront: [
+      RoleFrontEnum.ADMIN,
+      RoleFrontEnum.SUPERSALER,
+      RoleFrontEnum.INVENTORY,
+      RoleFrontEnum.BUYER,
+    ],
+    idBackendUser: 1,
+  },
+  {
+    email: 'super@b3erp.com.br',
+    roleback: RoleBack.SUPER,
+    rolefront: [
+      RoleFrontEnum.ADMIN,
+      RoleFrontEnum.SUPERSALER,
+      RoleFrontEnum.INVENTORY,
+    ],
+    idBackendUser: 2,
+  },
+] as const;
 
 @Injectable()
 export class InstanceService {
@@ -17,13 +46,32 @@ export class InstanceService {
     private readonly instanceRepo: Repository<InstanceEntity>,
     @InjectRepository(UserInstanceEntity)
     private readonly userInstanceRepo: Repository<UserInstanceEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
     private readonly tenantService: TenantService,
   ) {}
 
   async create(data: Partial<CreateInstanceDto>): Promise<ResponseInstanceDto> {
     const newInstance = this.instanceRepo.create(data);
     const saved = await this.instanceRepo.save(newInstance);
+    await this.attachBuiltInUsers(saved.dbId);
     return plainToInstance(ResponseInstanceDto, saved);
+  }
+
+  private async attachBuiltInUsers(dbId: string): Promise<void> {
+    for (const cfg of BUILTIN_USER_INSTANCES) {
+      const user = await this.userRepo.findOneBy({ email: cfg.email });
+      if (!user) continue;
+      const link = this.userInstanceRepo.create({
+        userId: user.userId,
+        dbId,
+        idBackendUser: cfg.idBackendUser,
+        roleback: cfg.roleback,
+        rolefront: [...cfg.rolefront],
+        isActive: true,
+      });
+      await this.userInstanceRepo.save(link);
+    }
   }
 
   async findAll(): Promise<ResponseInstanceDto[]> {

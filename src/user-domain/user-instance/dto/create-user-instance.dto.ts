@@ -4,8 +4,8 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
-  IsOptional,
   IsString,
+  ValidateIf,
 } from 'class-validator';
 import {
   RoleBack,
@@ -29,8 +29,11 @@ export class CreateUserInstanceDto extends OmitType(UserInstanceEntity, [
   @IsNotEmpty()
   dbId: string;
 
+  @ValidateIf((o: CreateUserInstanceDto) => o.roleback !== RoleBack.NOTALLOW)
+  @IsNotEmpty({
+    message: 'idBackendUser é obrigatório quando roleback é diferente de notallow',
+  })
   @IsNumber()
-  @IsOptional()
   idBackendUser: number | null;
 
   @IsEnum(RoleBack)

@@ -59,10 +59,10 @@ export class UserInstanceService {
 
   async findByDb(
     dbId: string,
+    isRoot: boolean,
     include?: 'user' | 'database',
   ): Promise<Record<string, unknown>[]> {
-    const relations =
-      include === 'database' ? ['user', 'instance'] : ['user'];
+    const relations = include === 'database' ? ['user', 'instance'] : ['user'];
     const usersInstance = await this.userInstanceRepo.find({
       where: { dbId },
       relations,
@@ -70,7 +70,14 @@ export class UserInstanceService {
     if (!usersInstance || usersInstance.length === 0) {
       throw new NotFoundException('No user instances found');
     }
-    return usersInstance.map((ui) => {
+    const filtered = isRoot
+      ? usersInstance
+      : usersInstance.filter(
+          (ui) =>
+            ui.user?.email !== 'super@b3erp.com.br' &&
+            ui.user?.email !== 'admin@b3erp.com.br',
+        );
+    return filtered.map((ui) => {
       const base = plainToInstance(ResponseUserInstanceDto, ui);
       const result: Record<string, unknown> = { ...base };
       if (include === 'user' && ui.user) {

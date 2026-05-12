@@ -586,7 +586,7 @@ Cria um vínculo entre usuário e tenant.
 | `dbId` | string | ✅ | CUID2 da instância/tenant |
 | `roleback` | string | ✅ | Role no BackOffice: `admin \| supervisor \| user \| notallow` |
 | `rolefront` | string[] | ✅ | Array de papéis no Web App, **não vazio**. Valores: `admin \| supersaler \| saler \| inventory \| buyer \| notallow`. Regra: `saler` e `supersaler` não podem coexistir no mesmo vínculo (`400 Bad Request` em caso contrário) |
-| `idBackendUser` | integer | ❌ | ID do usuário no sistema legado do tenant (BackOffice desktop) |
+| `idBackendUser` | integer \| null | condicional | ID do usuário no sistema legado do tenant (BackOffice desktop). **Obrigatório quando `roleback` é diferente de `notallow`**; opcional (pode ser omitido ou `null`) quando `roleback = notallow`. Violação retorna `400 Bad Request` |
 
 **Resposta `201`:** objeto `ResponseUserInstanceDto` (mesmo shape de `GET /user-instances/:id`).
 
@@ -815,7 +815,7 @@ Cria um convite (pré-cadastro) e envia e-mail ao convidado. O `userId` do admin
 | `dbId` | string | ✅ | CUID2 da instância/tenant ao qual o usuário será vinculado ao confirmar |
 | `roleBack` | string (enum) | ✅ | Papel no BackOffice. Valores: `admin \| supervisor \| user \| notallow` |
 | `roleFront` | string[] | ✅ | Array **não vazio** de papéis no Web App. Valores: `admin \| supersaler \| saler \| inventory \| buyer \| notallow`. Pode acumular múltiplos papéis (ex.: `["admin","supersaler"]`). Regra: `saler` e `supersaler` **não podem coexistir** no mesmo vínculo (`400 Bad Request` em caso contrário) |
-| `idBackendUser` | integer \| null | ❌ | ID do usuário no sistema legado do tenant (BackOffice desktop). Se omitido ou `null`, fica nulo |
+| `idBackendUser` | integer \| null | condicional | ID do usuário no sistema legado do tenant (BackOffice desktop). **Obrigatório quando `roleBack` é diferente de `notallow`**; opcional (pode ser omitido ou `null`) quando `roleBack = notallow`. A regra é validada por item de `dblist` — violação retorna `400 Bad Request` |
 
 > ⚠️ A nomenclatura aqui é `roleBack` / `roleFront` (camelCase). Após o `confirm`, esses dados são copiados para `user_instances` cujos campos são `roleback` / `rolefront` (lowercase).
 

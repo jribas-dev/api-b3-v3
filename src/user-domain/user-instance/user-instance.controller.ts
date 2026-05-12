@@ -53,6 +53,7 @@ export class UserInstanceController {
   @Get('db/:dbId')
   async findByDb(
     @Param('dbId') dbId: string,
+    @Request() req: { user: { isRoot: boolean } },
     @Query('include') include?: string,
   ) {
     if (include !== undefined && include !== 'user' && include !== 'database') {
@@ -60,7 +61,7 @@ export class UserInstanceController {
         "Parâmetro 'include' deve ser 'user' ou 'database'",
       );
     }
-    return this.userInstanceService.findByDb(dbId, include);
+    return this.userInstanceService.findByDb(dbId, req.user.isRoot, include);
   }
 
   @Get(':id')

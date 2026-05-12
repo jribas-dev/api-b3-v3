@@ -46,6 +46,12 @@ Não existe endpoint de `DELETE` — instâncias são desativadas via `isActive:
 - **Desativação em cascata:** ao atualizar `isActive` para `false`, o service automaticamente atualiza todos os registros `UserInstanceEntity` associados para `isActive: false`.
 - **IDs:** gerados via CUID2 no hook `@BeforeInsert()` — nunca auto-increment.
 - **`createdAt` / `updatedAt`** têm `select: false` — não são retornados nas queries padrão.
+- **BuiltIn users anexados na criação:** após persistir a instância, o `create` busca os usuários BuiltIn por email e cria um `user_instances` para cada um no novo `dbId`. Se o usuário BuiltIn não existir no banco, é ignorado silenciosamente.
+
+  | Email | `roleback` | `rolefront` | `idBackendUser` |
+  |---|---|---|---|
+  | `admin@b3erp.com.br` | `admin` | `[admin, supersaler, inventory, buyer]` | `1` |
+  | `super@b3erp.com.br` | `supervisor` | `[admin, supersaler, inventory]` | `2` |
 
 ## Arquivos
 
