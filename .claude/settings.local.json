@@ -12,7 +12,8 @@
       "WebSearch",
       "mcp__mysql__execute_sql",
       "Bash(npx eslint *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
