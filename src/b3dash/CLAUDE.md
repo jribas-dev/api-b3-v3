@@ -195,8 +195,8 @@ Paginação: `page` default 1, `limit` default 50 (max 200). `total` via query `
 |---|---|---|
 | `receber-vs-pagar` | `line` | 2 séries: realizado em recebimentos (`ctareceber.valorpago`) × pagamentos (`ctapagp.valorpago`) |
 | `fluxo-caixa-projetado` | `line` | 2 séries: entradas previstas (`ctareceber.vencimento`) × saídas previstas (`ctapag.dtemissao`) |
-| `inadimplencia` | `pie` | Snapshot: Recebido / A Vencer / Vencido (ignora `periodo`) |
-| `top-inadimplentes` | `bar_h` | Top 15 com maior valor vencido (snapshot) |
+| `inadimplencia` | `pie` | Composição Recebido / A Vencer / Vencido de títulos emitidos na janela do `periodo` (filtra `ctareceber.emissao` via `sinceSql`; classificação Vencido/A Vencer continua usando `CURDATE()`) |
+| `top-inadimplentes` | `bar_h` | Top 15 com maior valor vencido dentre os títulos emitidos na janela do `periodo` (filtra `ctareceber.emissao` via `sinceSql`; mantém `pagamento IS NULL AND vencimento < CURDATE()`) |
 | `entradas-por-especie` | `pie` | Composição de entradas por espécie (`finmov.debcred='C'` + `finespecie`) |
 | `saldo-destinos` | `bar_v` | Saldo líquido por destino (`SUM(IF(debcred='C', valor, -valor))`) |
 

@@ -178,22 +178,25 @@ export class FinanceiroService {
     dbId: string,
     userId: string,
     idemp: number,
+    periodo: 'S' | 'M' | 'T',
   ): Promise<ChartDataDto> {
     await this.validateIdemp(dbId, userId, idemp);
     const ds = await this.tenantService.getDataSource(dbId);
+    const { sinceSql } = this.periodResolver.resolve('r.emissao', periodo);
 
     const rows = await ds.query<
       Array<Record<string, string | number | Date | null>>
     >(
       `SELECT CASE
-                WHEN pagamento IS NOT NULL THEN 'Recebido'
-                WHEN vencimento < CURDATE()  THEN 'Vencido'
+                WHEN r.pagamento IS NOT NULL THEN 'Recebido'
+                WHEN r.vencimento < CURDATE() THEN 'Vencido'
                 ELSE 'A Vencer'
               END AS label,
-              ROUND(SUM(valor), 2) AS value
-       FROM ctareceber
-       WHERE anulada = 0
-         AND idemp = ?
+              ROUND(SUM(r.valor), 2) AS value
+       FROM ctareceber r
+       WHERE r.anulada = 0
+         AND r.idemp = ?
+         AND ${sinceSql}
        GROUP BY label`,
       [idemp],
     );
@@ -214,9 +217,11 @@ export class FinanceiroService {
     dbId: string,
     userId: string,
     idemp: number,
+    periodo: 'S' | 'M' | 'T',
   ): Promise<ChartDataDto> {
     await this.validateIdemp(dbId, userId, idemp);
     const ds = await this.tenantService.getDataSource(dbId);
+    const { sinceSql } = this.periodResolver.resolve('r.emissao', periodo);
 
     const rows = await ds.query<
       Array<Record<string, string | number | Date | null>>
@@ -230,6 +235,7 @@ export class FinanceiroService {
          AND r.idemp = ?
          AND r.pagamento IS NULL
          AND r.vencimento < CURDATE()
+         AND ${sinceSql}
        GROUP BY c.id, c.razao, c.fantasia
        ORDER BY valorVencido DESC
        LIMIT 15`,

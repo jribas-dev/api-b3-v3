@@ -56,17 +56,18 @@ export class FinanceiroController {
           query.periodo,
         );
       case 'inadimplencia':
-        // snapshot — período ignorado
         return this.financeiroService.graphInadimplencia(
           dbId,
           userId,
           query.idemp,
+          query.periodo,
         );
       case 'top-inadimplentes':
         return this.financeiroService.graphTopInadimplentes(
           dbId,
           userId,
           query.idemp,
+          query.periodo,
         );
       case 'entradas-por-especie':
         return this.financeiroService.graphEntradasPorEspecie(

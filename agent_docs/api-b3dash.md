@@ -332,7 +332,9 @@ Fluxo de caixa projetado: entradas previstas × saídas previstas (por venciment
 
 ### `GET /b3dash/financeiro/graph/inadimplencia`
 
-Composição do contas a receber: Recebido × A Vencer × Vencido (snapshot — ignora o parâmetro `periodo`).
+Composição do contas a receber emitidos dentro da janela do `periodo`: Recebido × A Vencer × Vencido.
+
+> A janela é aplicada sobre `ctareceber.emissao` (16 semanas para `S`, 12 meses para `M`, 6 trimestres para `T`). A classificação Recebido/Vencido/A Vencer continua sendo avaliada na data atual (`CURDATE()`).
 
 **Chart type:** `pie`
 
@@ -352,7 +354,9 @@ Composição do contas a receber: Recebido × A Vencer × Vencido (snapshot — 
 
 ### `GET /b3dash/financeiro/graph/top-inadimplentes`
 
-Top 15 clientes com maior valor vencido (snapshot — ignora `periodo`).
+Top 15 clientes com maior valor vencido dentro da janela do `periodo`.
+
+> A janela é aplicada sobre `ctareceber.emissao` (16 semanas para `S`, 12 meses para `M`, 6 trimestres para `T`). Apenas títulos com `pagamento IS NULL` e `vencimento < CURDATE()` (vencidos) são considerados.
 
 **Chart type:** `bar_h`
 
@@ -715,8 +719,8 @@ Grid de compras agrupadas por fornecedor no período.
 |---|---|---|---|
 | `GET /b3dash/financeiro/graph/receber-vs-pagar` | Gráfico | `line` (2 séries) | ✅ |
 | `GET /b3dash/financeiro/graph/fluxo-caixa-projetado` | Gráfico | `line` (2 séries) | ✅ |
-| `GET /b3dash/financeiro/graph/inadimplencia` | Gráfico | `pie` | ❌ snapshot |
-| `GET /b3dash/financeiro/graph/top-inadimplentes` | Gráfico | `bar_h` | ❌ snapshot |
+| `GET /b3dash/financeiro/graph/inadimplencia` | Gráfico | `pie` | ✅ (filtro por `emissao`) |
+| `GET /b3dash/financeiro/graph/top-inadimplentes` | Gráfico | `bar_h` | ✅ (filtro por `emissao`) |
 | `GET /b3dash/financeiro/graph/entradas-por-especie` | Gráfico | `pie` | ✅ |
 | `GET /b3dash/financeiro/graph/saldo-destinos` | Gráfico | `bar_v` | ✅ |
 | `GET /b3dash/financeiro/list/receber` | Grid | — | ✅ |
