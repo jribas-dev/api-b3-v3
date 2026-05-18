@@ -209,35 +209,96 @@ export class FaturamentoService {
   ): Promise<ChartDataDto> {
     await this.validateIdemp(dbId, userId, idemp);
     const ds = await this.tenantService.getDataSource(dbId);
-    const { sinceSql } = this.periodResolver.resolve('v.dthremissao', periodo);
+    const { sinceSql, groupExpr } = this.periodResolver.resolve(
+      'v.dthremissao',
+      periodo,
+    );
+    const labels = this.periodResolver.generateLabels(periodo);
 
-    const rows = await ds.query<
+    const topRows = await ds.query<
       Array<Record<string, string | number | Date | null>>
     >(
       `SELECT v.idvend,
-              COALESCE(c.razao, 'Sem vendedor') AS label,
-              ROUND(SUM(v.vlrtotal), 2) AS valor,
-              COUNT(*) AS qtdPedidos
+              COALESCE(c.razao, 'Sem vendedor') AS nomeVendedor,
+              ROUND(SUM(v.vlrtotal), 2) AS total
        FROM venda v
        LEFT JOIN cnt c ON c.id = v.idvend
        WHERE v.tipo = 'V'
          AND v.idemp = ?
          AND ${sinceSql}
        GROUP BY v.idvend, c.razao
-       ORDER BY valor DESC
+       ORDER BY total DESC
        LIMIT 15`,
       [idemp],
     );
 
+    const top = topRows.map((r) => ({
+      idvend: r.idvend == null ? null : Number(r.idvend),
+      nomeVendedor: String(r.nomeVendedor ?? 'Sem vendedor'),
+    }));
+
+    if (top.length === 0) {
+      return { chartType: 'line', labels, series: [] };
+    }
+
+    const numericIds = top
+      .map((t) => t.idvend)
+      .filter((id): id is number => id != null);
+    const hasNull = top.some((t) => t.idvend == null);
+
+    const vendFilters: string[] = [];
+    const vendParams: number[] = [];
+    if (numericIds.length > 0) {
+      vendFilters.push(`v.idvend IN (${numericIds.map(() => '?').join(',')})`);
+      vendParams.push(...numericIds);
+    }
+    if (hasNull) {
+      vendFilters.push(`v.idvend IS NULL`);
+    }
+    const vendFilter = `AND (${vendFilters.join(' OR ')})`;
+
+    const buckets = await ds.query<
+      Array<Record<string, string | number | Date | null>>
+    >(
+      `SELECT ${groupExpr} AS periodo,
+              v.idvend,
+              ROUND(SUM(v.vlrtotal), 2) AS total
+       FROM venda v
+       WHERE v.tipo = 'V'
+         AND v.idemp = ?
+         AND ${sinceSql}
+         ${vendFilter}
+       GROUP BY periodo, v.idvend
+       ORDER BY periodo`,
+      [idemp, ...vendParams],
+    );
+
+    const byVend = new Map<
+      number | null,
+      Array<Record<string, string | number | Date | null>>
+    >();
+    for (const row of buckets) {
+      const key = row.idvend == null ? null : Number(row.idvend);
+      const arr = byVend.get(key);
+      if (arr) arr.push(row);
+      else byVend.set(key, [row]);
+    }
+
+    const series = top.map((t) => ({
+      name: t.nomeVendedor,
+      data: this.periodResolver.fillSeries(
+        byVend.get(t.idvend) ?? [],
+        labels,
+        'periodo',
+        'total',
+        periodo,
+      ),
+    }));
+
     return {
-      chartType: 'bar_v',
-      labels: rows.map((r) => String(r.label)),
-      series: [
-        {
-          name: 'Total vendido',
-          data: rows.map((r) => parseFloat(String(r.valor)) || 0),
-        },
-      ],
+      chartType: 'line',
+      labels,
+      series,
     };
   }
 

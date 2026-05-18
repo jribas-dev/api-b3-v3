@@ -232,28 +232,25 @@ export class EstoqueService {
     const rows = await ds.query<
       Array<Record<string, string | number | Date | null>>
     >(
-      `SELECT COALESCE(g.grupo, 'Sem grupo') AS label,
-              COUNT(*) AS qtdProdutos
+      `SELECT p.nome AS label,
+              ROUND(s.saldo - p.saldomin, 3) AS saldoRuptura
        FROM prd p
        JOIN prdsaldo s ON s.idprod = p.id
-       LEFT JOIN prdsubgrupo ps ON ps.id = p.idsubgrupo
-       LEFT JOIN prdgrupo g ON g.id = ps.idgrupo
        WHERE s.idemp = ?
          AND s.saldo < p.saldomin
          AND p.saldomin > 0
-       GROUP BY g.id, g.grupo
-       ORDER BY qtdProdutos DESC
+       ORDER BY saldoRuptura DESC
        LIMIT 15`,
       [idemp],
     );
 
     return {
-      chartType: 'bar_v',
+      chartType: 'bar_h',
       labels: rows.map((r) => String(r.label)),
       series: [
         {
-          name: 'Produtos em ruptura',
-          data: rows.map((r) => Number(r.qtdProdutos) || 0),
+          name: 'Saldo ruptura',
+          data: rows.map((r) => parseFloat(String(r.saldoRuptura)) || 0),
         },
       ],
     };

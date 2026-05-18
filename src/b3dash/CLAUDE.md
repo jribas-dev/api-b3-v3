@@ -61,9 +61,9 @@ Resolução centralizada em `PeriodResolver.resolve(column, periodo)`:
 
 | Flag | Nome | Janela | GROUP BY SQL | Formato label |
 |---|---|---|---|---|
-| `S` | Semanal | 54 semanas atrás até hoje | `YEARWEEK(col, 1)` | `YYYY-Www` |
+| `S` | Semanal | 16 semanas atrás até hoje | `YEARWEEK(col, 1)` | `YYYY-Www` |
 | `M` | Mensal | 12 meses atrás até hoje | `DATE_FORMAT(col, '%Y-%m')` | `YYYY-MM` |
-| `T` | Trimestral | 4 trimestres atrás até hoje | `CONCAT(YEAR(col),'-T',QUARTER(col))` | `YYYY-Tn` |
+| `T` | Trimestral | 6 trimestres atrás até hoje | `CONCAT(YEAR(col),'-T',QUARTER(col))` | `YYYY-Tn` |
 
 Uso típico:
 
@@ -176,7 +176,7 @@ Paginação: `page` default 1, `limit` default 50 (max 200). `total` via query `
 | `ticket-medio` | `line` | `AVG(fat.valortotal)` por período |
 | `top-produtos` | `bar_h` | Top 15 produtos por valor (`vendaitem` + `venda` + `prd`) |
 | `top-clientes` | `bar_h` | Top 15 clientes por faturamento (`fat` + `cnt`) |
-| `ranking-vendedores` | `bar_v` | Top 15 vendedores (`venda` + `cnt`, LEFT JOIN preserva `NULL`) |
+| `ranking-vendedores` | `line` | Top 15 vendedores ao longo do período — uma série por vendedor; seleção via `SUM(v.vlrtotal)` no período total (`venda` + `cnt`, LEFT JOIN preserva `NULL`) |
 | `mix-operacoes` | `pie` | Distribuição por operação fiscal (`fat` + `operacoes`) |
 
 ### Lists (`/list/{tipo}`)
@@ -224,7 +224,7 @@ Query extra: `status` ∈ `pago | vencido | aberto` (opcional; default = todos).
 | `top-produtos-comprados` | `bar_h` | Top 15 por quantidade (`movprd` + `mov.saidaentrada='0'` + `prd`) |
 | `top-fornecedores` | `bar_h` | Top 15 por valor de compras (`mov` + `cnt`) |
 | `curva-abc` | `pie` | Classificação A/B/C por % acumulado (A ≤ 80%, B ≤ 95%, C > 95%) — ignora `periodo` |
-| `ruptura` | `bar_v` | Produtos com `saldo < saldomin` agrupados por `prdgrupo` (snapshot) |
+| `ruptura` | `bar_h` | Top 15 produtos em ruptura (`saldo < saldomin`) por `saldo - saldomin` desc (snapshot) |
 | `valor-por-grupo` | `pie` | Valor imobilizado (`saldo × customedio`) por grupo (snapshot) |
 
 ### Lists (`/list/{tipo}`)

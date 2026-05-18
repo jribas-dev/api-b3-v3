@@ -12,7 +12,7 @@ export class PeriodResolver {
     switch (periodo) {
       case 'S':
         return {
-          sinceSql: `${column} >= DATE_SUB(CURDATE(), INTERVAL 54 WEEK)`,
+          sinceSql: `${column} >= DATE_SUB(CURDATE(), INTERVAL 16 WEEK)`,
           groupExpr: `YEARWEEK(${column}, 1)`,
           label: 'periodo',
         };
@@ -24,7 +24,7 @@ export class PeriodResolver {
         };
       case 'T':
         return {
-          sinceSql: `${column} >= DATE_SUB(CURDATE(), INTERVAL 4 QUARTER)`,
+          sinceSql: `${column} >= DATE_SUB(CURDATE(), INTERVAL 6 QUARTER)`,
           groupExpr: `CONCAT(YEAR(${column}),'-T',QUARTER(${column}))`,
           label: 'periodo',
         };
@@ -44,14 +44,14 @@ export class PeriodResolver {
         );
       }
     } else if (periodo === 'T') {
-      for (let i = 3; i >= 0; i--) {
+      for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i * 3, 1);
         const q = Math.floor(d.getMonth() / 3) + 1;
         labels.push(`${d.getFullYear()}-T${q}`);
       }
     } else {
-      // S — 54 semanas ISO
-      for (let i = 53; i >= 0; i--) {
+      // S — 16 semanas ISO
+      for (let i = 15; i >= 0; i--) {
         const d = new Date(now);
         d.setDate(d.getDate() - i * 7);
         labels.push(this.isoWeekLabel(d));
