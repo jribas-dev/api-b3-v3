@@ -17,7 +17,7 @@ import { RolesFront } from 'src/auth/decorators/roles-front.decorator';
 import { RoleFrontEnum } from 'src/user-domain/user-instance/enums/user-instance-roles.enum';
 import { TenantAwareCacheInterceptor } from '../shared/tenant-aware-cache.interceptor';
 import { GraphQueryDto } from '../shared/dto/graph-query.dto';
-import { ListQueryDto } from '../shared/dto/list-query.dto';
+import { EstoqueListQueryDto } from './dto/estoque-list-query.dto';
 import { EstoqueService } from './estoque.service';
 
 type JwtRequest = { user: { userId: string; dbId: string } };
@@ -87,7 +87,7 @@ export class EstoqueController {
   async list(
     @Request() req: JwtRequest,
     @Param('tipo') tipo: string,
-    @Query() query: ListQueryDto & { apenasRuptura?: string },
+    @Query() query: EstoqueListQueryDto,
   ) {
     const { dbId, userId } = req.user;
     switch (tipo) {
@@ -108,7 +108,7 @@ export class EstoqueController {
           query.idemp,
           query.page,
           query.limit,
-          query.apenasRuptura === 'true',
+          query.apenasRuptura,
         );
       case 'por-fornecedor':
         return this.estoqueService.listPorFornecedor(
