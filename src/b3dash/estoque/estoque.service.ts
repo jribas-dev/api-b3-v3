@@ -27,6 +27,12 @@ export class EstoqueService {
     }
   }
 
+  private buildTipoFilter(tipo?: string): string {
+    if (tipo === 'entradas') return "AND e.tipo = 'E'";
+    if (tipo === 'saidas') return "AND e.tipo = 'S'";
+    return '';
+  }
+
   // ── Graphs ──────────────────────────────────────────────────────────────
 
   async graphEntradasVsSaidas(
@@ -309,11 +315,7 @@ export class EstoqueService {
     const { sinceSql } = this.periodResolver.resolve('e.dthrestoque', periodo);
     const offset = (page - 1) * limit;
 
-    // tipo é um enum fixo validado antes da interpolação
-    const tipoFilter =
-      tipo && ['E', 'S', 'B'].includes(tipo)
-        ? `AND e.tipo = '${tipo}'`
-        : "AND e.tipo IN ('E','S','B')";
+    const tipoFilter = this.buildTipoFilter(tipo);
 
     const [rows, countRows] = await Promise.all([
       ds.query<Array<Record<string, string | number | Date | null>>>(
