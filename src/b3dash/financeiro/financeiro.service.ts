@@ -365,7 +365,7 @@ export class FinanceiroService {
            AND r.idemp = ?
            AND ${sinceSql}
            ${statusFilter}
-         ORDER BY r.vencimento ASC
+         ORDER BY r.emissao DESC
          LIMIT ? OFFSET ?`,
         [idemp, limit, offset],
       ),
@@ -439,7 +439,8 @@ export class FinanceiroService {
       WHERE cp.idemp = ?
         AND ${sinceSql}
       GROUP BY cp.id, cp.nrodoc, c.fantasia, c.razao,
-               cp.dtemissao, cp.valortotal, pg.valorpago`;
+               cp.dtemissao, cp.valortotal, pg.valorpago
+      ORDER BY cp.dtemissao DESC`;
 
     const [rows, countRows] = await Promise.all([
       ds.query<Array<Record<string, string | number | Date | null>>>(

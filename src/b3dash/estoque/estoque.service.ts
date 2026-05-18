@@ -333,7 +333,7 @@ export class EstoqueService {
            AND e.idemp = ?
            AND ${sinceSql}
            ${tipoFilter}
-         ORDER BY e.dthrestoque DESC
+         ORDER BY e.dthrestoque, p.nome DESC
          LIMIT ? OFFSET ?`,
         [idemp, limit, offset],
       ),
